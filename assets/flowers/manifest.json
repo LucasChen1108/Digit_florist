@@ -1,4 +1,713 @@
 {
  "version": 1,
- "assets": {}
+ "assets": {
+  "_foliage": [
+   {
+    "file": "_foliage/leaf-1.webp",
+    "w": 293,
+    "h": 512,
+    "ax": 0.4823,
+    "ay": 0.9863,
+    "r": 1.7099
+   },
+   {
+    "file": "_foliage/leaf-10.webp",
+    "w": 280,
+    "h": 512,
+    "ax": 0.589,
+    "ay": 0.9688,
+    "r": 1.7429
+   },
+   {
+    "file": "_foliage/leaf-11.webp",
+    "w": 374,
+    "h": 512,
+    "ax": 0.5346,
+    "ay": 0.9648,
+    "r": 1.2861
+   },
+   {
+    "file": "_foliage/leaf-2.webp",
+    "w": 236,
+    "h": 512,
+    "ax": 0.5041,
+    "ay": 0.998,
+    "r": 2.1483
+   },
+   {
+    "file": "_foliage/leaf-3.webp",
+    "w": 236,
+    "h": 512,
+    "ax": 0.4536,
+    "ay": 0.998,
+    "r": 2.1525
+   },
+   {
+    "file": "_foliage/leaf-4.webp",
+    "w": 229,
+    "h": 512,
+    "ax": 0.4335,
+    "ay": 0.9668,
+    "r": 2.1266
+   },
+   {
+    "file": "_foliage/leaf-5.webp",
+    "w": 421,
+    "h": 512,
+    "ax": 0.5314,
+    "ay": 0.9668,
+    "r": 1.1378
+   },
+   {
+    "file": "_foliage/leaf-6.webp",
+    "w": 369,
+    "h": 512,
+    "ax": 0.4751,
+    "ay": 0.9668,
+    "r": 1.3171
+   },
+   {
+    "file": "_foliage/leaf-7.webp",
+    "w": 366,
+    "h": 512,
+    "ax": 0.5585,
+    "ay": 0.9688,
+    "r": 1.3388
+   },
+   {
+    "file": "_foliage/leaf-8.webp",
+    "w": 328,
+    "h": 512,
+    "ax": 0.5779,
+    "ay": 0.9668,
+    "r": 1.4939
+   },
+   {
+    "file": "_foliage/leaf-9.webp",
+    "w": 325,
+    "h": 512,
+    "ax": 0.4349,
+    "ay": 0.9668,
+    "r": 1.4954
+   }
+  ],
+  "anemone": [
+   {
+    "file": "anemone/blue-full-1.webp",
+    "color": "blue",
+    "stage": 2,
+    "recolor": false,
+    "w": 483,
+    "h": 512,
+    "ax": 0.4815,
+    "ay": 0.5125,
+    "r": 0.4851
+   },
+   {
+    "file": "anemone/panda-full-1.webp",
+    "color": "white",
+    "stage": 2,
+    "recolor": true,
+    "w": 512,
+    "h": 500,
+    "ax": 0.5004,
+    "ay": 0.474,
+    "r": 0.4768
+   },
+   {
+    "file": "anemone/panda-full-2.webp",
+    "color": "white",
+    "stage": 2,
+    "recolor": true,
+    "w": 480,
+    "h": 512,
+    "ax": 0.5224,
+    "ay": 0.5337,
+    "r": 0.4566
+   },
+   {
+    "file": "anemone/red-full-1.webp",
+    "color": "red",
+    "stage": 2,
+    "recolor": false,
+    "w": 512,
+    "h": 469,
+    "ax": 0.5169,
+    "ay": 0.5051,
+    "r": 0.437
+   },
+   {
+    "file": "anemone/red-full-2.webp",
+    "color": "red",
+    "stage": 2,
+    "recolor": false,
+    "w": 480,
+    "h": 512,
+    "ax": 0.5165,
+    "ay": 0.4691,
+    "r": 0.4513
+   },
+   {
+    "file": "anemone/violet-full-1.webp",
+    "color": "violet",
+    "stage": 2,
+    "recolor": false,
+    "w": 512,
+    "h": 401,
+    "ax": 0.4793,
+    "ay": 0.5433,
+    "r": 0.3443
+   }
+  ],
+  "carnation": [
+   {
+    "file": "carnation/neutral-full-1.webp",
+    "color": "white",
+    "stage": 2,
+    "recolor": true,
+    "w": 512,
+    "h": 502,
+    "ax": 0.4905,
+    "ay": 0.5192,
+    "r": 0.4411
+   },
+   {
+    "file": "carnation/pink-full-1.webp",
+    "color": "pink",
+    "stage": 2,
+    "recolor": false,
+    "w": 495,
+    "h": 512,
+    "ax": 0.5072,
+    "ay": 0.5025,
+    "r": 0.4629
+   },
+   {
+    "file": "carnation/red-full-1.webp",
+    "color": "red",
+    "stage": 2,
+    "recolor": false,
+    "w": 512,
+    "h": 421,
+    "ax": 0.4848,
+    "ay": 0.5102,
+    "r": 0.413
+   }
+  ],
+  "daisy": [
+   {
+    "file": "daisy/white-full-1.webp",
+    "color": "white",
+    "stage": 2,
+    "recolor": true,
+    "w": 512,
+    "h": 503,
+    "ax": 0.4879,
+    "ay": 0.4968,
+    "r": 0.454
+   },
+   {
+    "file": "daisy/white-full-2.webp",
+    "color": "white",
+    "stage": 2,
+    "recolor": true,
+    "w": 512,
+    "h": 490,
+    "ax": 0.488,
+    "ay": 0.4904,
+    "r": 0.4172
+   },
+   {
+    "file": "daisy/white-full-3.webp",
+    "color": "white",
+    "stage": 2,
+    "recolor": true,
+    "w": 486,
+    "h": 512,
+    "ax": 0.4871,
+    "ay": 0.4767,
+    "r": 0.4477
+   }
+  ],
+  "hydrangea": [
+   {
+    "file": "hydrangea/purple-full-1.webp",
+    "color": "purple",
+    "stage": 2,
+    "recolor": false,
+    "w": 506,
+    "h": 512,
+    "ax": 0.4854,
+    "ay": 0.5019,
+    "r": 0.4566
+   }
+  ],
+  "lavender": [
+   {
+    "file": "lavender/purple-full-1.webp",
+    "color": "purple",
+    "stage": 2,
+    "recolor": false,
+    "w": 331,
+    "h": 512,
+    "ax": 0.2391,
+    "ay": 0.998,
+    "r": 1.4924
+   },
+   {
+    "file": "lavender/white-full-1.webp",
+    "color": "white",
+    "stage": 2,
+    "recolor": true,
+    "w": 165,
+    "h": 512,
+    "ax": 0.1551,
+    "ay": 0.998,
+    "r": 3.0
+   }
+  ],
+  "lily": [
+   {
+    "file": "lily/orange-full-1.webp",
+    "color": "orange",
+    "stage": 2,
+    "recolor": false,
+    "w": 512,
+    "h": 481,
+    "ax": 0.5395,
+    "ay": 0.5005,
+    "r": 0.3719
+   },
+   {
+    "file": "lily/orange-full-2.webp",
+    "color": "orange",
+    "stage": 2,
+    "recolor": false,
+    "w": 512,
+    "h": 453,
+    "ax": 0.4925,
+    "ay": 0.4942,
+    "r": 0.3803
+   },
+   {
+    "file": "lily/pink-full-1.webp",
+    "color": "pink",
+    "stage": 2,
+    "recolor": false,
+    "w": 492,
+    "h": 512,
+    "ax": 0.4801,
+    "ay": 0.5033,
+    "r": 0.3053
+   },
+   {
+    "file": "lily/pink-full-2.webp",
+    "color": "pink",
+    "stage": 2,
+    "recolor": false,
+    "w": 439,
+    "h": 512,
+    "ax": 0.4557,
+    "ay": 0.4777,
+    "r": 0.4264
+   }
+  ],
+  "lisianthus": [
+   {
+    "file": "lisianthus/neutral-full-2.webp",
+    "color": "white",
+    "stage": 2,
+    "recolor": true,
+    "w": 512,
+    "h": 469,
+    "ax": 0.4918,
+    "ay": 0.4928,
+    "r": 0.4499
+   },
+   {
+    "file": "lisianthus/pink-full-1.webp",
+    "color": "pink",
+    "stage": 2,
+    "recolor": false,
+    "w": 499,
+    "h": 512,
+    "ax": 0.5032,
+    "ay": 0.5094,
+    "r": 0.4843
+   },
+   {
+    "file": "lisianthus/purple-full-1.webp",
+    "color": "purple",
+    "stage": 2,
+    "recolor": false,
+    "w": 512,
+    "h": 512,
+    "ax": 0.5082,
+    "ay": 0.499,
+    "r": 0.4741
+   },
+   {
+    "file": "lisianthus/purple-full-2.webp",
+    "color": "purple",
+    "stage": 2,
+    "recolor": false,
+    "w": 512,
+    "h": 485,
+    "ax": 0.5028,
+    "ay": 0.5204,
+    "r": 0.4255
+   },
+   {
+    "file": "lisianthus/rim-full-1.webp",
+    "color": "rim",
+    "stage": 2,
+    "recolor": false,
+    "w": 512,
+    "h": 470,
+    "ax": 0.4774,
+    "ay": 0.4935,
+    "r": 0.4457
+   }
+  ],
+  "peony": [
+   {
+    "file": "peony/burgundy-full-1.webp",
+    "color": "burgundy",
+    "stage": 2,
+    "recolor": false,
+    "w": 512,
+    "h": 504,
+    "ax": 0.5013,
+    "ay": 0.5029,
+    "r": 0.454
+   },
+   {
+    "file": "peony/neutral-full-1.webp",
+    "color": "white",
+    "stage": 2,
+    "recolor": true,
+    "w": 487,
+    "h": 512,
+    "ax": 0.4958,
+    "ay": 0.4685,
+    "r": 0.4497
+   },
+   {
+    "file": "peony/neutral-full-2.webp",
+    "color": "white",
+    "stage": 2,
+    "recolor": true,
+    "w": 496,
+    "h": 512,
+    "ax": 0.4944,
+    "ay": 0.5014,
+    "r": 0.4819
+   },
+   {
+    "file": "peony/neutral-full-5.webp",
+    "color": "white",
+    "stage": 2,
+    "recolor": true,
+    "w": 512,
+    "h": 478,
+    "ax": 0.4782,
+    "ay": 0.5065,
+    "r": 0.4367
+   }
+  ],
+  "ranunculus": [
+   {
+    "file": "ranunculus/burgundy-full-1.webp",
+    "color": "burgundy",
+    "stage": 2,
+    "recolor": false,
+    "w": 512,
+    "h": 498,
+    "ax": 0.4933,
+    "ay": 0.4877,
+    "r": 0.4857
+   },
+   {
+    "file": "ranunculus/butter-full-1.webp",
+    "color": "butter",
+    "stage": 2,
+    "recolor": false,
+    "w": 512,
+    "h": 458,
+    "ax": 0.5516,
+    "ay": 0.4843,
+    "r": 0.4305
+   },
+   {
+    "file": "ranunculus/neutral-full-1.webp",
+    "color": "white",
+    "stage": 2,
+    "recolor": true,
+    "w": 512,
+    "h": 493,
+    "ax": 0.4995,
+    "ay": 0.5023,
+    "r": 0.454
+   },
+   {
+    "file": "ranunculus/neutral-half-1.webp",
+    "color": "white",
+    "stage": 1,
+    "recolor": true,
+    "w": 512,
+    "h": 499,
+    "ax": 0.5068,
+    "ay": 0.5213,
+    "r": 0.4546
+   },
+   {
+    "file": "ranunculus/orange-full-1.webp",
+    "color": "orange",
+    "stage": 2,
+    "recolor": false,
+    "w": 512,
+    "h": 495,
+    "ax": 0.5129,
+    "ay": 0.4919,
+    "r": 0.4731
+   },
+   {
+    "file": "ranunculus/orange-full-2.webp",
+    "color": "orange",
+    "stage": 2,
+    "recolor": false,
+    "w": 512,
+    "h": 450,
+    "ax": 0.475,
+    "ay": 0.4723,
+    "r": 0.4384
+   }
+  ],
+  "rose": [
+   {
+    "file": "rose/burgundy-full-1.webp",
+    "color": "burgundy",
+    "stage": 2,
+    "recolor": false,
+    "w": 496,
+    "h": 512,
+    "ax": 0.4857,
+    "ay": 0.4875,
+    "r": 0.481
+   },
+   {
+    "file": "rose/coral-full-1.webp",
+    "color": "coral",
+    "stage": 2,
+    "recolor": false,
+    "w": 506,
+    "h": 512,
+    "ax": 0.5018,
+    "ay": 0.5493,
+    "r": 0.4583
+   },
+   {
+    "file": "rose/coral-full-2.webp",
+    "color": "coral",
+    "stage": 2,
+    "recolor": false,
+    "w": 512,
+    "h": 427,
+    "ax": 0.4918,
+    "ay": 0.4658,
+    "r": 0.4352
+   },
+   {
+    "file": "rose/neutral-full-1.webp",
+    "color": "white",
+    "stage": 2,
+    "recolor": true,
+    "w": 506,
+    "h": 512,
+    "ax": 0.5086,
+    "ay": 0.5061,
+    "r": 0.4581
+   },
+   {
+    "file": "rose/pink-full-1.webp",
+    "color": "pink",
+    "stage": 2,
+    "recolor": false,
+    "w": 511,
+    "h": 512,
+    "ax": 0.5091,
+    "ay": 0.5067,
+    "r": 0.4587
+   },
+   {
+    "file": "rose/pink-full-2.webp",
+    "color": "pink",
+    "stage": 2,
+    "recolor": false,
+    "w": 500,
+    "h": 512,
+    "ax": 0.4618,
+    "ay": 0.5542,
+    "r": 0.4427
+   },
+   {
+    "file": "rose/pink-full-3.webp",
+    "color": "pink",
+    "stage": 2,
+    "recolor": false,
+    "w": 510,
+    "h": 512,
+    "ax": 0.5091,
+    "ay": 0.5079,
+    "r": 0.4594
+   },
+   {
+    "file": "rose/red-full-1.webp",
+    "color": "red",
+    "stage": 2,
+    "recolor": false,
+    "w": 512,
+    "h": 433,
+    "ax": 0.5399,
+    "ay": 0.4741,
+    "r": 0.4021
+   },
+   {
+    "file": "rose/red-full-2.webp",
+    "color": "red",
+    "stage": 2,
+    "recolor": false,
+    "w": 512,
+    "h": 483,
+    "ax": 0.4976,
+    "ay": 0.5049,
+    "r": 0.4182
+   },
+   {
+    "file": "rose/red-full-3.webp",
+    "color": "red",
+    "stage": 2,
+    "recolor": false,
+    "w": 463,
+    "h": 512,
+    "ax": 0.5029,
+    "ay": 0.4646,
+    "r": 0.461
+   },
+   {
+    "file": "rose/yellow-full-1.webp",
+    "color": "yellow",
+    "stage": 2,
+    "recolor": false,
+    "w": 512,
+    "h": 471,
+    "ax": 0.4895,
+    "ay": 0.4611,
+    "r": 0.4128
+   }
+  ],
+  "sunflower": [
+   {
+    "file": "sunflower/golden-full-1.webp",
+    "color": "golden",
+    "stage": 2,
+    "recolor": false,
+    "w": 512,
+    "h": 465,
+    "ax": 0.4904,
+    "ay": 0.4869,
+    "r": 0.4309
+   },
+   {
+    "file": "sunflower/golden-full-2.webp",
+    "color": "golden",
+    "stage": 2,
+    "recolor": false,
+    "w": 512,
+    "h": 460,
+    "ax": 0.5015,
+    "ay": 0.5114,
+    "r": 0.4318
+   },
+   {
+    "file": "sunflower/golden-full-3.webp",
+    "color": "golden",
+    "stage": 2,
+    "recolor": false,
+    "w": 495,
+    "h": 512,
+    "ax": 0.4956,
+    "ay": 0.5067,
+    "r": 0.4387
+   },
+   {
+    "file": "sunflower/golden-full-4.webp",
+    "color": "golden",
+    "stage": 2,
+    "recolor": false,
+    "w": 512,
+    "h": 506,
+    "ax": 0.5028,
+    "ay": 0.4933,
+    "r": 0.4401
+   }
+  ],
+  "tulip": [
+   {
+    "file": "tulip/orange-full-1.webp",
+    "color": "orange",
+    "stage": 2,
+    "recolor": false,
+    "w": 417,
+    "h": 512,
+    "ax": 0.5211,
+    "ay": 0.3989,
+    "r": 0.4847
+   },
+   {
+    "file": "tulip/pink-half-1.webp",
+    "color": "pink",
+    "stage": 1,
+    "recolor": false,
+    "w": 512,
+    "h": 492,
+    "ax": 0.4974,
+    "ay": 0.4805,
+    "r": 0.4821
+   },
+   {
+    "file": "tulip/red-full-1.webp",
+    "color": "red",
+    "stage": 2,
+    "recolor": false,
+    "w": 512,
+    "h": 402,
+    "ax": 0.4732,
+    "ay": 0.4488,
+    "r": 0.3504
+   },
+   {
+    "file": "tulip/red-half-1.webp",
+    "color": "red",
+    "stage": 1,
+    "recolor": false,
+    "w": 453,
+    "h": 512,
+    "ax": 0.5025,
+    "ay": 0.5218,
+    "r": 0.5007
+   },
+   {
+    "file": "tulip/yellow-half-1.webp",
+    "color": "yellow",
+    "stage": 1,
+    "recolor": false,
+    "w": 245,
+    "h": 512,
+    "ax": 0.4874,
+    "ay": 0.3943,
+    "r": 0.5849
+   }
+  ]
+ }
 }

@@ -157,7 +157,7 @@ def main():
             rel = f"{ftype}/{stem}.webp"
             dest = args.out / rel
             dest.parent.mkdir(parents=True, exist_ok=True)
-            im.save(dest, "WEBP", quality=args.quality, method=6)
+            im.save(dest, "WEBP", quality=args.quality, method=4)
             manifest["assets"].setdefault(ftype, []).append({"file": rel, **meta, **geo})
             total += 1
             print(f"  ✓ {rel}  {geo['w']}×{geo['h']}  {dest.stat().st_size // 1024} KB")

@@ -10,7 +10,7 @@
 //
 // Images are fetched once into blob: URLs (cheap to repeat inside the live SVG) and
 // converted to data: URLs only when a standalone image is needed (PNG export, thumbnails).
-import { shades, hexToRgb, Defs } from './util.js';
+import { hexToRgb, Defs } from './util.js';
 
 const BASE = new URL('../../assets/flowers/', import.meta.url);
 let manifest = null;
@@ -49,10 +49,14 @@ function fetchBlob(file) {
 }
 
 /** Best image for a stem: exact colour → recolourable neutral; same stage preferred. */
+const NO_TINT = new Set(['rose', 'peony']);
+
 export function pickAsset(type, color, stage, seed = 0) {
   const list = manifest?.assets?.[type];
   if (!list?.length) return null;
-  const score = (a) => (a.color === color ? 0 : a.recolor ? 10 : 100) + Math.abs((a.stage ?? 2) - stage) * 3;
+  // dyeing a white photo looks natural for simple petals, but roses/peonies turn waxy → use illustration instead
+  const canTint = !NO_TINT.has(type);
+  const score = (a) => (a.color === color ? 0 : a.recolor && canTint ? 10 : 100) + Math.abs((a.stage ?? 2) - stage) * 3;
   const best = Math.min(...list.map(score));
   if (best >= 100) return null;
   const options = list.filter((a) => score(a) === best);
@@ -85,23 +89,18 @@ export function foliageAssets() {
   return (manifest?.assets?._foliage || []).map((a) => ({ ...a, url: assetUrl(a.file) })).filter((a) => a.url);
 }
 
-/** Gradient-map filter that tints a neutral photo to the target colour. */
+/** "Dyes" a neutral (white) photo: desaturate, then multiply by the target colour.
+ *  Keeps the real petal shading, so it reads like a dyed fresh flower rather than a metallic tint. */
 export function recolorFilter(defs, hex) {
   const id = defs.id('rc' + hex);
   if (!defs.has(id)) {
-    const s = shades(hex);
-    // white petals mostly sit between 45% and 100% luminance: spread that range over the whole ramp
-    const pts = [[0, s.deep], [0.45, s.deep], [0.62, s.dark], [0.8, s.base], [0.93, s.light], [1, s.pale]].map(([t, c]) => [t, hexToRgb(c)]);
-    const at = (t) => {
-      let i = 1;
-      while (i < pts.length - 1 && pts[i][0] < t) i++;
-      const [t0, c0] = pts[i - 1], [t1, c1] = pts[i];
-      const k = t1 === t0 ? 0 : (t - t0) / (t1 - t0);
-      return c0.map((v, j) => v + (c1[j] - v) * Math.min(1, Math.max(0, k)));
-    };
-    const stops = Array.from({ length: 21 }, (_, i) => at(i / 20));
-    const ch = (i) => stops.map((c) => (c[i] / 255).toFixed(3)).join(' ');
-    defs.add(id, `<filter id="${id}" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values=".3 .59 .11 0 0 .3 .59 .11 0 0 .3 .59 .11 0 0 0 0 0 1 0"/><feComponentTransfer><feFuncR type="table" tableValues="${ch(0)}"/><feFuncG type="table" tableValues="${ch(1)}"/><feFuncB type="table" tableValues="${ch(2)}"/></feComponentTransfer></filter>`);
+    const [r, g, b] = hexToRgb(hex).map((v) => v / 255);
+    // pale targets get a flatter, brighter dye (real champagne/blush petals have soft shading)
+    const lum = 0.3 * r + 0.59 * g + 0.11 * b;
+    const a = lum > 0.75 ? 0.88 : 1.0;
+    const off = 1.06 - a;
+    const row = (c) => `${(0.3 * c * a).toFixed(3)} ${(0.59 * c * a).toFixed(3)} ${(0.11 * c * a).toFixed(3)} 0 ${(c * off).toFixed(3)}`;
+    defs.add(id, `<filter id="${id}" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="${row(r)} ${row(g)} ${row(b)} 0 0 0 1 0"/></filter>`);
   }
   return id;
 }

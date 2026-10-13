@@ -68,3 +68,7 @@ Add it to `js/core/catalog.js` and (for a new type) a renderer in `js/core/flowe
 ### Adding a template
 
 Append an entry to `TEMPLATES` in `js/core/templates.js` with its occasions, style and design. Its flower-language category is worked out automatically from the flowers you choose.
+
+## Photo credits
+
+The photo cut-outs in `assets/flowers/` come from Wikimedia Commons (public domain, CC0, CC BY and CC BY-SA). Authors and licences are listed in [CREDITS.md](CREDITS.md).
