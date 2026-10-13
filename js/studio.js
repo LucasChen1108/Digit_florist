@@ -1,0 +1,368 @@
+import { t, L, getLang, setLang, onLang, applyI18n } from './i18n.js';
+import {
+  FLOWERS, TYPE_KEYS, GRADES, STAGES, DISTS, distsFor, SIZES, SIZE_KEYS, SHAPES, SHAPE_KEYS,
+  GREENERY, WRAPS, WRAP_KEYS, RIBBONS, RIBBON_KEYS, ROSE_COUNTS, TEMPLATES, colorOf,
+} from './core/catalog.js';
+import { renderBouquet, renderFlowerPreview, stemCount } from './core/bouquet.js';
+import { esc } from './core/util.js';
+import { encodeGift, giftUrl } from './share.js';
+import { downloadPng } from './export.js';
+
+const STORE = 'digit-florist-draft-v1';
+const HERO = { lily: 'pink', hydrangea: 'blue', daisy: 'white' };
+const $ = (s, r = document) => r.querySelector(s);
+
+const starter = () => ({
+  size: 'M', shape: 'round', wrap: 'kraft', ribbon: 'ivory', greenery: 2, seed: 20261013,
+  groups: [
+    { id: 1, type: 'rose', color: 'red', grade: 1, stage: 2, count: 9, dist: 'scatter', clusters: 2 },
+    { id: 2, type: 'peony', color: 'blush', grade: 1, stage: 2, count: 3, dist: 'cluster', clusters: 1 },
+    { id: 3, type: 'babysbreath', color: 'white', grade: 1, stage: 2, count: 4, dist: 'scatter', clusters: 2 },
+    { id: 4, type: 'eucalyptus', color: 'silver', grade: 1, stage: 2, count: 3, dist: 'scatter', clusters: 2 },
+  ],
+  overrides: {},
+  card: { to: '', from: '', msg: '' },
+  nextId: 5,
+});
+
+function load() {
+  try {
+    const raw = localStorage.getItem(STORE);
+    if (raw) {
+      const s = JSON.parse(raw);
+      if (s && Array.isArray(s.groups)) return { ...starter(), ...s };
+    }
+  } catch {}
+  return starter();
+}
+
+let state = load();
+let tab = 'flowers';
+const picker = { type: 'rose', color: 'red', grade: 1, stage: 2, qty: 3 };
+let last = null; // last render result
+
+function save() {
+  try { localStorage.setItem(STORE, JSON.stringify(state)); } catch {}
+}
+
+/* ---------------- toast ---------------- */
+let toastTimer;
+function toast(msg) {
+  const el = $('#toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2400);
+}
+
+/* ---------------- stage ---------------- */
+let raf = 0;
+function scheduleStage() {
+  if (raf) return;
+  raf = requestAnimationFrame(() => { raf = 0; renderStage(); });
+}
+
+function renderStage() {
+  last = renderBouquet(state, { prefix: 'st', interactive: true, background: false });
+  $('#stage').innerHTML = last.svg;
+  const n = stemCount(state), cap = SIZES[state.size].cap;
+  const pill = $('#countPill');
+  pill.textContent = t('stems', { n, cap });
+  pill.classList.toggle('warn', n >= cap);
+  const roses = state.groups.filter((g) => g.type === 'rose').reduce((a, g) => a + g.count, 0);
+  $('#roseNote').textContent = ROSE_COUNTS[roses] ? t('roseMeaning', { n: roses, m: L(ROSE_COUNTS[roses]) }) : '';
+  $('#stage').classList.toggle('empty', n === 0);
+  if (n === 0) $('#stage').insertAdjacentHTML('beforeend', `<p class="empty-msg">${esc(t('empty'))}</p>`);
+}
+
+/* drag flowers directly on the bouquet */
+let drag = null;
+function svgPoint(e) {
+  const svg = $('#stage svg');
+  const pt = svg.createSVGPoint();
+  pt.x = e.clientX; pt.y = e.clientY;
+  return pt.matrixTransform(svg.getScreenCTM().inverse());
+}
+function initDrag() {
+  const stage = $('#stage');
+  stage.addEventListener('pointerdown', (e) => {
+    const el = e.target.closest('[data-stem]');
+    if (!el || !last) return;
+    const id = el.dataset.stem;
+    const p = last.pos.get(id);
+    if (!p) return;
+    const s = svgPoint(e);
+    drag = { id, ox: p.x - s.x, oy: p.y - s.y, moved: false };
+    stage.setPointerCapture(e.pointerId);
+    stage.classList.add('dragging');
+    e.preventDefault();
+  });
+  stage.addEventListener('pointermove', (e) => {
+    if (!drag) return;
+    const s = svgPoint(e);
+    const D = last.D;
+    const x = Math.max(-1.25 * D, Math.min(1.25 * D, s.x + drag.ox));
+    const y = Math.max(-1.2 * D, Math.min(1.0 * D, s.y + drag.oy));
+    state.overrides[drag.id] = [x, y];
+    drag.moved = true;
+    scheduleStage();
+  });
+  const end = () => {
+    if (!drag) return;
+    if (drag.moved) { save(); if (tab === 'arrange') renderPanel(); }
+    drag = null;
+    stage.classList.remove('dragging');
+  };
+  stage.addEventListener('pointerup', end);
+  stage.addEventListener('pointercancel', end);
+}
+
+/* ---------------- panel ---------------- */
+const seg = (act, options, current, extra = '') =>
+  `<div class="seg" role="radiogroup">${options.map(([v, label]) =>
+    `<button type="button" role="radio" aria-checked="${v === current}" class="${v === current ? 'on' : ''}" data-act="${act}" data-v="${v}" ${extra}>${esc(label)}</button>`).join('')}</div>`;
+
+function flowersTab() {
+  const f = FLOWERS[picker.type];
+  const cdef = colorOf(picker.type, picker.color);
+  const grid = TYPE_KEYS.map((k) => {
+    const def = FLOWERS[k];
+    const hero = HERO[k] || def.colors[0].id;
+    return `<button type="button" class="ftype ${k === picker.type ? 'on' : ''}" data-act="type" data-v="${k}">
+      <span class="ftype-art">${renderFlowerPreview(k, hero, 1, 2, 'pv' + k)}</span>
+      <span class="ftype-name">${esc(L(def.name))}</span></button>`;
+  }).join('');
+  const colors = f.colors.map((c) =>
+    `<button type="button" class="swatch ${c.id === picker.color ? 'on' : ''}" style="--c:${c.hex}" data-act="color" data-v="${c.id}" title="${esc(L(c.name))}" aria-label="${esc(L(c.name))}"></button>`).join('');
+  const cap = SIZES[state.size].cap, used = stemCount(state);
+  return `
+    <h3 class="sec-title" data-i18n="chooseFlower">${esc(t('chooseFlower'))}</h3>
+    <div class="ftype-grid">${grid}</div>
+    <div class="config">
+      <div class="config-art" id="pickArt">${renderFlowerPreview(picker.type, picker.color, picker.grade, picker.stage, 'pk' + picker.type + picker.color + picker.grade + picker.stage)}</div>
+      <div class="config-body">
+        <div class="config-head">
+          <h4>${esc(L(cdef.name))} ${esc(L(f.name))}</h4>
+          <p class="meaning"><span>${esc(t('meaning'))}</span>${esc(L(f.meaning))}</p>
+        </div>
+        <label class="field-label">${esc(t('color'))} · <em>${esc(L(cdef.name))}</em></label>
+        <div class="swatches">${colors}</div>
+        <label class="field-label">${esc(t('grade'))} · <em>${esc(L(GRADES[picker.grade].desc))}</em></label>
+        ${seg('grade', GRADES.map((g, i) => [i, L(g.name)]), picker.grade)}
+        ${f.stages ? `<label class="field-label">${esc(t('stage'))}</label>${seg('stage', STAGES.map((s, i) => [i, L(s.name)]), picker.stage)}` : ''}
+        <div class="add-row">
+          <div class="stepper">
+            <button type="button" data-act="qty" data-v="-1" aria-label="−">−</button>
+            <output>${picker.qty}</output>
+            <button type="button" data-act="qty" data-v="1" aria-label="+">+</button>
+          </div>
+          <button type="button" class="btn primary grow" data-act="add" ${used >= cap ? 'disabled' : ''}>${esc(t('addN', { n: Math.min(picker.qty, Math.max(0, cap - used)) || picker.qty }))}</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+function arrangeTab() {
+  const shapeIcons = {
+    round: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/></svg>',
+    wide: '<svg viewBox="0 0 24 24"><ellipse cx="12" cy="13" rx="10" ry="6.5"/></svg>',
+    heart: '<svg viewBox="0 0 24 24"><path d="M12 20s-7.5-4.6-7.5-10A4.2 4.2 0 0 1 12 7.6 4.2 4.2 0 0 1 19.5 10C19.5 15.4 12 20 12 20Z"/></svg>',
+  };
+  const shapes = SHAPE_KEYS.map((k) =>
+    `<button type="button" class="chip ${state.shape === k ? 'on' : ''}" data-act="shape" data-v="${k}">${shapeIcons[k]}${esc(L(SHAPES[k]))}</button>`).join('');
+  const groups = state.groups.map((g) => {
+    const f = FLOWERS[g.type], c = colorOf(g.type, g.color);
+    const sub = [L(GRADES[g.grade].name), f.stages ? L(STAGES[g.stage].name) : null].filter(Boolean).join(' · ');
+    const dists = distsFor(f.kind).map((d) => [d, L(DISTS[d])]);
+    return `<li class="grp">
+      <span class="grp-art">${renderFlowerPreview(g.type, g.color, g.grade, g.stage, 'gl' + g.type + g.color + g.grade + g.stage)}</span>
+      <div class="grp-main">
+        <div class="grp-top">
+          <div><strong>${esc(L(c.name))} ${esc(L(f.name))}</strong><small>${esc(sub)}</small></div>
+          <div class="stepper sm">
+            <button type="button" data-act="gqty" data-gid="${g.id}" data-v="-1" aria-label="−">−</button>
+            <output>${g.count}</output>
+            <button type="button" data-act="gqty" data-gid="${g.id}" data-v="1" aria-label="+">+</button>
+          </div>
+          <button type="button" class="x-btn" data-act="gdel" data-gid="${g.id}" title="${esc(t('remove'))}" aria-label="${esc(t('remove'))}">×</button>
+        </div>
+        <div class="grp-dist">${seg('gdist', dists, g.dist, `data-gid="${g.id}"`)}
+        ${g.dist === 'cluster' ? `<div class="cl"><span>${esc(t('clusters'))}</span>${seg('gcl', [[1, '1'], [2, '2'], [3, '3']], g.clusters || 2, `data-gid="${g.id}"`)}</div>` : ''}</div>
+      </div></li>`;
+  }).join('');
+  const hasOv = Object.keys(state.overrides || {}).length > 0;
+  return `
+    <h3 class="sec-title">${esc(t('shape'))}</h3>
+    <div class="chips">${shapes}</div>
+    <h3 class="sec-title">${esc(t('greenery'))}</h3>
+    ${seg('greenery', GREENERY.map((g, i) => [i, L(g)]), state.greenery)}
+    <div class="sec-row"><h3 class="sec-title">${esc(t('inBouquet'))}</h3>
+      <div class="row-actions">
+        ${hasOv ? `<button type="button" class="link-btn" data-act="resetpos">${esc(t('resetPos'))}</button>` : ''}
+        ${state.groups.length ? `<button type="button" class="link-btn" data-act="clear">${esc(t('clearAll'))}</button>` : ''}
+      </div></div>
+    ${state.groups.length ? `<ul class="grp-list">${groups}</ul>` : `<p class="muted empty-note">${esc(t('empty'))}</p>`}
+    <p class="muted small">${esc(t('dragHint'))}</p>`;
+}
+
+function wrapTab() {
+  const sizes = SIZE_KEYS.map((k) => {
+    const s = SIZES[k];
+    return `<button type="button" class="size-card ${state.size === k ? 'on' : ''}" data-act="size" data-v="${k}">
+      <span class="size-ico" style="--s:${0.55 + SIZE_KEYS.indexOf(k) * 0.15}"><i></i></span>
+      <strong>${esc(L(s.name))}</strong><small>${esc(t('upTo', { n: s.cap }))}</small><em>${esc(L(s.note))}</em></button>`;
+  }).join('');
+  const papers = WRAP_KEYS.map((k) => {
+    const w = WRAPS[k];
+    return `<button type="button" class="paper ${state.wrap === k ? 'on' : ''}" data-act="wrap" data-v="${k}" style="--o:${w.outer};--i:${w.inner}"><span></span>${esc(L(w.name))}</button>`;
+  }).join('');
+  const ribbons = RIBBON_KEYS.map((k) => {
+    const r = RIBBONS[k];
+    return `<button type="button" class="swatch ribbon ${state.ribbon === k ? 'on' : ''}" style="--c:${r.hex}" data-act="ribbon" data-v="${k}" title="${esc(L(r.name))}" aria-label="${esc(L(r.name))}"></button>`;
+  }).join('');
+  return `
+    <h3 class="sec-title">${esc(t('size'))}</h3>
+    <div class="size-grid">${sizes}</div>
+    <h3 class="sec-title">${esc(t('paper'))}</h3>
+    <div class="paper-grid">${papers}</div>
+    <h3 class="sec-title">${esc(t('ribbon'))} · <em class="thin">${esc(L(RIBBONS[state.ribbon].name))}</em></h3>
+    <div class="swatches">${ribbons}</div>`;
+}
+
+function cardTab() {
+  const c = state.card;
+  const tmpls = TEMPLATES.map((tp, i) => `<button type="button" class="chip" data-act="tmpl" data-v="${i}">${esc(L(tp.tag))}</button>`).join('');
+  return `
+    <h3 class="sec-title">${esc(t('cardTitle'))}</h3>
+    <div class="card-form">
+      <label><span>${esc(t('to'))}</span><input id="cTo" maxlength="40" value="${esc(c.to)}" placeholder="${esc(t('toPh'))}" /></label>
+      <label><span>${esc(t('message'))}</span><textarea id="cMsg" maxlength="300" rows="5" placeholder="${esc(t('msgPh'))}">${esc(c.msg)}</textarea></label>
+      <label><span>${esc(t('from'))}</span><input id="cFrom" maxlength="40" value="${esc(c.from)}" placeholder="${esc(t('fromPh'))}" /></label>
+    </div>
+    <p class="field-label">${esc(t('templates'))}</p>
+    <div class="chips">${tmpls}</div>
+    <button type="button" class="btn primary big" data-act="send">${esc(t('send'))}
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h14m-5-5 5 5-5 5"/></svg></button>`;
+}
+
+function renderPanel() {
+  const body = $('#panelBody');
+  const html = { flowers: flowersTab, arrange: arrangeTab, wrap: wrapTab, card: cardTab }[tab]();
+  body.innerHTML = html;
+  document.querySelectorAll('.tabs [data-tab]').forEach((b) => {
+    b.classList.toggle('on', b.dataset.tab === tab);
+    b.setAttribute('aria-selected', b.dataset.tab === tab);
+  });
+  if (tab === 'card') {
+    const bind = (id, key) => $(id).addEventListener('input', (e) => { state.card[key] = e.target.value; save(); });
+    bind('#cTo', 'to'); bind('#cFrom', 'from'); bind('#cMsg', 'msg');
+  }
+}
+
+function update({ panel = true, stage = true } = {}) {
+  save();
+  if (stage) renderStage();
+  if (panel) renderPanel();
+}
+
+/* ---------------- actions ---------------- */
+function addFlowers() {
+  const cap = SIZES[state.size].cap, used = stemCount(state);
+  const room = cap - used;
+  if (room <= 0) { toast(t('full')); return; }
+  const n = Math.min(picker.qty, room);
+  const f = FLOWERS[picker.type];
+  const stage = f.stages ? picker.stage : 2;
+  const same = state.groups.find((g) => g.type === picker.type && g.color === picker.color && g.grade === picker.grade && g.stage === stage);
+  if (same) same.count += n;
+  else state.groups.push({ id: state.nextId++, type: picker.type, color: picker.color, grade: picker.grade, stage, count: n, dist: f.kind === 'sprig' ? 'scatter' : 'scatter', clusters: 2 });
+  toast(t('added', { name: L(colorOf(picker.type, picker.color).name) + ' ' + L(f.name), n }) + (n < picker.qty ? ' · ' + t('full') : ''));
+  update();
+}
+
+const ACTIONS = {
+  type: (v) => { picker.type = v; picker.color = FLOWERS[v].colors[0].id; update({ stage: false }); },
+  color: (v) => { picker.color = v; update({ stage: false }); },
+  grade: (v) => { picker.grade = +v; update({ stage: false }); },
+  stage: (v) => { picker.stage = +v; update({ stage: false }); },
+  qty: (v) => { picker.qty = Math.max(1, Math.min(99, picker.qty + +v)); update({ stage: false }); },
+  add: () => addFlowers(),
+  shape: (v) => { state.shape = v; state.overrides = {}; update(); },
+  greenery: (v) => { state.greenery = +v; update(); },
+  size: (v) => {
+    const used = stemCount(state);
+    if (used > SIZES[v].cap) { toast(t('full')); return; }
+    state.size = v; state.overrides = {}; update();
+  },
+  wrap: (v) => { state.wrap = v; update(); },
+  ribbon: (v) => { state.ribbon = v; update(); },
+  gqty: (v, el) => {
+    const g = state.groups.find((x) => x.id === +el.dataset.gid);
+    if (!g) return;
+    if (+v > 0 && stemCount(state) >= SIZES[state.size].cap) { toast(t('full')); return; }
+    g.count += +v;
+    if (g.count <= 0) state.groups = state.groups.filter((x) => x !== g);
+    update();
+  },
+  gdel: (_, el) => { state.groups = state.groups.filter((x) => x.id !== +el.dataset.gid); update(); },
+  gdist: (v, el) => { const g = state.groups.find((x) => x.id === +el.dataset.gid); if (g) { g.dist = v; clearGroupOverrides(g.id); update(); } },
+  gcl: (v, el) => { const g = state.groups.find((x) => x.id === +el.dataset.gid); if (g) { g.clusters = +v; clearGroupOverrides(g.id); update(); } },
+  shuffle: () => { state.seed = Math.floor(Math.random() * 1e9); state.overrides = {}; update({ panel: tab === 'arrange' }); },
+  resetpos: () => { state.overrides = {}; update(); },
+  clear: () => { state.groups = []; state.overrides = {}; update(); },
+  tmpl: (v) => { state.card.msg = TEMPLATES[+v][getLang()]; save(); const m = $('#cMsg'); if (m) m.value = state.card.msg; },
+  send: () => openShare(),
+};
+
+function clearGroupOverrides(gid) {
+  for (const k of Object.keys(state.overrides)) if (k.startsWith(gid + '.')) delete state.overrides[k];
+}
+
+document.addEventListener('click', (e) => {
+  const tb = e.target.closest('.tabs [data-tab]');
+  if (tb) { tab = tb.dataset.tab; renderPanel(); return; }
+  const el = e.target.closest('[data-act]');
+  if (el && ACTIONS[el.dataset.act]) ACTIONS[el.dataset.act](el.dataset.v, el);
+});
+
+/* ---------------- share dialog ---------------- */
+let shareUrl = '';
+async function openShare() {
+  if (stemCount(state) === 0) { toast(t('needFlowers')); return; }
+  const code = await encodeGift(state, state.card, getLang());
+  shareUrl = giftUrl(code);
+  $('#shareLink').value = shareUrl;
+  $('#shareArt').innerHTML = renderBouquet(state, { prefix: 'sh', background: false }).svg;
+  $('#nativeShare').hidden = !navigator.share;
+  $('#shareDlg').showModal();
+}
+
+$('#shareDlg').addEventListener('click', async (e) => {
+  if (e.target === $('#shareDlg')) { $('#shareDlg').close(); return; }
+  const b = e.target.closest('[data-dlg]');
+  if (!b) return;
+  const what = b.dataset.dlg;
+  if (what === 'copy') {
+    try { await navigator.clipboard.writeText(shareUrl); }
+    catch { $('#shareLink').select(); document.execCommand('copy'); }
+    toast(t('copied'));
+  } else if (what === 'share') {
+    const from = state.card.from ? state.card.from + ' · ' : '';
+    try { await navigator.share({ title: t('giftFor'), text: from + t('giftFor') + ' 💐', url: shareUrl }); } catch {}
+  } else if (what === 'preview') {
+    window.open(shareUrl, '_blank', 'noopener');
+  } else if (what === 'download') {
+    toast(t('saving'));
+    const { svg } = renderBouquet(state, { prefix: 'ex', width: 1400 });
+    const c = state.card;
+    await downloadPng(svg, { card: { to: c.to ? t('dear', { name: c.to }) : '', msg: c.msg, from: c.from } });
+  }
+});
+
+/* ---------------- boot ---------------- */
+$('#langBtn').addEventListener('click', () => setLang(getLang() === 'zh' ? 'en' : 'zh'));
+onLang(() => { renderStage(); renderPanel(); });
+applyI18n();
+initDrag();
+renderStage();
+renderPanel();

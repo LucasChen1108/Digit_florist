@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>A bouquet for you · 有一束花送给你</title>
+  <meta name="description" content="Someone sent you a hand-tied digital bouquet. 有人为你扎了一束电子花束。" />
+  <meta name="theme-color" content="#f6efe7" />
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Noto+Serif+SC:wght@500;600&family=Ma+Shan+Zheng&display=swap" media="print" onload="this.media='all'" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body class="gift-page">
+  <header class="topbar slim">
+    <a class="brand" href="./">
+      <img src="assets/favicon.svg" alt="" width="26" height="26" />
+      <span class="brand-name" data-i18n="brand">Digit Florist</span>
+    </a>
+    <button class="lang-btn" id="langBtn" type="button" aria-label="Switch language"><span data-i18n="langLabel">中文</span></button>
+  </header>
+
+  <div class="petal-rain" id="petals" aria-hidden="true"></div>
+
+  <main class="gift">
+    <section class="envelope-screen" id="envelope">
+      <button class="envelope" id="openBtn" type="button">
+        <span class="env-back"></span>
+        <span class="env-letter"><span class="env-art" id="envArt"></span></span>
+        <span class="env-front"></span>
+        <span class="env-flap"></span>
+        <span class="env-seal"><svg viewBox="0 0 40 40" aria-hidden="true"><path d="M20 31s-9.5-5.8-9.5-12.6A5.3 5.3 0 0 1 20 15.3a5.3 5.3 0 0 1 9.5 3.1C29.5 25.2 20 31 20 31Z"/></svg></span>
+      </button>
+      <h1 class="env-title" data-i18n="giftFor"></h1>
+      <p class="env-from" id="envFrom"></p>
+      <p class="env-tap" data-i18n="tapOpen"></p>
+    </section>
+
+    <section class="reveal" id="reveal" hidden>
+      <div class="gift-stage" id="giftStage"></div>
+      <article class="note" id="note">
+        <p class="note-to" id="noteTo"></p>
+        <p class="note-msg" id="noteMsg"></p>
+        <p class="note-from" id="noteFrom"></p>
+      </article>
+      <div class="gift-actions">
+        <button class="btn" type="button" id="replayBtn"><span data-i18n="replay"></span></button>
+        <button class="btn" type="button" id="saveBtn"><span data-i18n="download"></span></button>
+        <a class="btn primary" href="./" data-i18n="makeOwn"></a>
+      </div>
+    </section>
+
+    <section class="invalid" id="invalid" hidden>
+      <p data-i18n="invalid"></p>
+      <a class="btn primary" href="./" data-i18n="makeOwn"></a>
+    </section>
+  </main>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script type="module" src="js/gift.js"></script>
+</body>
+</html>
