@@ -1,6 +1,7 @@
 // Procedural SVG flowers. Every renderer draws around the origin and returns
 // { svg, r } where r is the drawn outer radius (used to scale it into the bouquet).
 import { shades, tone, mix, lightness, F, petalPath, GOLDEN, radialGrad, linearGrad } from './util.js';
+import { pickAsset, assetUrl, recolorFilter } from './assets.js';
 
 const RAD = Math.PI / 180;
 
@@ -486,8 +487,55 @@ function craspedia({ hex, grade, rng, defs }) {
 
 export const RENDERERS = { rose, tulip, peony, sunflower, lily, carnation, daisy, hydrangea, lavender, eucalyptus, babysbreath, anemone, ranunculus, lisianthus, craspedia };
 
+export const RENDER_STYLE = { soft: true, tip: true };
+
+/**
+ * Turns flat gradient petals into softly lit, cupped ones: every gradient-filled
+ * petal gets a cross-petal curvature shade and a translucent glow at its tip,
+ * and hard outline strokes are replaced by a faint shadow edge.
+ */
+function soften(svg, defs, hex) {
+  const sh = shades(hex);
+  const k = hex.replace('#', '');
+  const dk = sh.deep;
+  const hi = sh.pale;
+  const cup = linearGrad(defs, 'cup' + k, [[0, dk, 0.32], [0.18, dk, 0.08], [0.4, hi, 0.16], [0.55, hi, 0], [0.8, dk, 0.08], [1, dk, 0.36]], { x1: 0, y1: 0, x2: 1, y2: 0.12 });
+  const tip = radialGrad(defs, 'tip' + k, [[0, hi, 0.3], [0.5, hi, 0.09], [1, hi, 0]], { cx: 0.5, cy: 0, r: 0.6 });
+  const base = linearGrad(defs, 'basesh' + k, [[0, dk, 0.45], [0.4, dk, 0], [1, dk, 0]], { x1: 0, y1: 1, x2: 0, y2: 0 });
+  return svg.replace(/<path d="([^"]+)"((?: transform="[^"]*")?) fill="(url\(#[^)]+\))"[^>]*\/>/g, (m, d, tr, fill) => {
+    if (!/C/.test(d)) return m;
+    let o = `<path d="${d}"${tr} fill="${fill}" stroke="${dk}" stroke-opacity=".18" stroke-width=".4"/>`;
+    o += `<path d="${d}"${tr} fill="${cup}"/><path d="${d}"${tr} fill="${base}"/>`;
+    if (RENDER_STYLE.tip) o += `<path d="${d}"${tr} fill="${tip}"/>`;
+    return o;
+  });
+}
+
+const NO_SOFTEN = new Set(['hydrangea', 'lavender', 'eucalyptus', 'babysbreath', 'craspedia', 'sunflower', 'daisy']);
+
+/** A photo cut-out for this stem, or null (no asset / still loading → ctx.pending). */
+function photoFlower(type, ctx) {
+  const a = pickAsset(type, ctx.cdef?.id ?? '', ctx.stage, ctx.seedInt || 0);
+  if (!a) return null;
+  const url = assetUrl(a.file);
+  if (!url) { ctx.pending = true; return null; }
+  const sprig = ctx.kind === 'sprig';
+  const W = (sprig ? 120 : 50) / Math.max(0.05, a.r);
+  const H = (W * a.h) / a.w;
+  const filt = a.tint ? ` filter="url(#${recolorFilter(ctx.defs, ctx.hex)})"` : '';
+  let svg = `<image href="${url}" x="${F(-a.ax * W)}" y="${F(-a.ay * H)}" width="${F(W)}" height="${F(H)}" preserveAspectRatio="none"${filt}/>`;
+  if (!sprig && ctx.grade === 2) svg += dew(ctx.rng, 38, ctx.defs, 3);
+  return { svg, r: 50, photo: true };
+}
+
 export function renderFlower(type, ctx) {
-  return (RENDERERS[type] || rose)(ctx);
+  if (ctx.style === 'photo') {
+    const p = photoFlower(type, ctx);
+    if (p) return p;
+  }
+  const out = (RENDERERS[type] || rose)(ctx);
+  if (RENDER_STYLE.soft && !NO_SOFTEN.has(type)) out.svg = soften(out.svg, ctx.defs, ctx.hex);
+  return out;
 }
 
 /* ---------------- Greenery leaf (used by the bouquet composer) ---------------- */

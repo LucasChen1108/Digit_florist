@@ -8,6 +8,7 @@ Hand-tie a digital bouquet and send it as a link. 亲手扎一束电子花束，
 - **Wrapping** – 4 sizes (11 / 33 / 66 / 99 stems), 7 papers, 7 satin ribbons, adjustable greenery.
 - **Template library** – 42 ready-made bouquets (`library.html`) browsable by occasion, style or flower language; open one in the studio and change anything.
 - **Flower language** – every colour has its own meaning, and the whole bouquet gets a generated reading.
+- **Art styles** – switch between *Illustrated*, *Watercolour* and *Photo*. Photo uses real flower cut-outs from `assets/flowers/` (see [`tools/ASSET_GUIDE.md`](tools/ASSET_GUIDE.md)); flowers without a photo fall back to the illustration, and neutral white photos can be tinted to any colour.
 - **Gifting** – write a card, get a share link. The recipient opens an envelope, the bouquet blooms in, petals drift down, and they can save it as an image.
 
 Every flower is drawn procedurally as SVG in the browser — no image assets, no backend. The whole bouquet (layout seed, flowers, dragged positions and card) is compressed into the URL hash of `gift.html`, so links work anywhere the site is hosted.
@@ -48,6 +49,10 @@ js/core/meaning.js  bouquet flower-language reading
 js/core/templates.js template library data (occasion / style tags)
 js/core/bouquet.js  composes paper, greenery, stems, flowers and ribbon
 js/core/util.js     seeded RNG, colour maths, spline paths, SVG gradients
+js/core/assets.js   photo-asset manifest, loading, recolouring, export inlining
+assets/flowers/     photo cut-outs + manifest.json (generated)
+tools/prepare_assets.py  turns raw photos / AI renders into web assets
+tools/ASSET_GUIDE.md     how to shoot / generate / license the photos
 ```
 
 ### Adding a flower or colour

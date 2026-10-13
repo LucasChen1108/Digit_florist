@@ -1,6 +1,7 @@
 import { t, L, getLang, setLang, onLang, applyI18n } from './i18n.js';
 import { FLOWERS, SIZES, WRAPS, RIBBONS, GRADES, STAGES, colorOf } from './core/catalog.js';
-import { renderBouquet, renderFlowerPreview, stemCount } from './core/bouquet.js';
+import { renderBouquet, renderFlowerPreview, stemCount, STYLE_KEYS, clearFlowerCache } from './core/bouquet.js';
+import { loadManifest, preloadDesign, inlineAssets, assetCount } from './core/assets.js';
 import { bouquetMeaning } from './core/meaning.js';
 import {
   TEMPLATES, OCCASIONS, OCCASION_KEYS, THEMES, THEME_KEYS, LANGUAGES, LANGUAGE_KEYS, templateById, cloneDesign,
@@ -29,22 +30,32 @@ function catOf(tp) {
 }
 
 /* ---------- thumbnails (rendered lazily to image URLs) ---------- */
+const STYLE_PREF = 'digit-florist-style';
+let style = (() => { try { const v = localStorage.getItem(STYLE_PREF); return STYLE_KEYS.includes(v) ? v : 'illustrated'; } catch { return 'illustrated'; } })();
 const images = new Map();
 function imageFor(tp) {
-  if (!images.has(tp.id)) {
-    const { svg } = renderBouquet(cloneDesign(tp), { prefix: 'lb' + tp.id, width: 700 });
-    images.set(tp.id, URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' })));
+  const key = style + '|' + tp.id;
+  if (!images.has(key)) {
+    images.set(key, (async () => {
+      const d = cloneDesign(tp);
+      d.style = style;
+      if (style === 'photo') await preloadDesign(d);
+      const svg = await inlineAssets(renderBouquet(d, { prefix: 'lb' + tp.id, width: 700 }).svg);
+      return URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }));
+    })());
   }
-  return images.get(tp.id);
+  return images.get(key);
+}
+async function fillImg(img) {
+  img.src = await imageFor(templateById(img.dataset.id));
+  img.onload = () => img.classList.add('in');
 }
 const io = 'IntersectionObserver' in window
   ? new IntersectionObserver((entries) => {
     for (const e of entries) {
       if (!e.isIntersecting) continue;
-      const img = e.target;
-      io.unobserve(img);
-      img.src = imageFor(templateById(img.dataset.id));
-      img.onload = () => img.classList.add('in');
+      io.unobserve(e.target);
+      fillImg(e.target);
     }
   }, { rootMargin: '300px' })
   : null;
@@ -64,7 +75,14 @@ function card(tp) {
   </button>`;
 }
 
+function renderStyleSeg() {
+  const avail = STYLE_KEYS.filter((k) => k !== 'photo' || assetCount() > 0);
+  $('#styleSeg').innerHTML = `<span>${esc(t('styleLabel'))}</span>` + avail.map((k) =>
+    `<button type="button" class="${k === style ? 'on' : ''}" data-style="${k}">${esc(t('style.' + k))}</button>`).join('');
+}
+
 function renderControls() {
+  renderStyleSeg();
   $('#modeSeg').innerHTML = Object.keys(MODES).map((k) =>
     `<button type="button" role="tab" class="${k === mode ? 'on' : ''}" data-mode="${k}">${esc(t('by.' + k))}</button>`).join('');
   const M = MODES[mode];
@@ -84,7 +102,7 @@ function renderLib() {
   }).join('');
   document.querySelectorAll('#lib img[data-id]').forEach((img) => {
     if (io) io.observe(img);
-    else { img.src = imageFor(templateById(img.dataset.id)); img.classList.add('in'); }
+    else fillImg(img);
   });
 }
 
@@ -108,7 +126,7 @@ function openDetail(id) {
   current = tp;
   const d = cloneDesign(tp);
   const m = bouquetMeaning(d, getLang());
-  $('#tdImg').src = imageFor(tp);
+  imageFor(tp).then((u) => { $('#tdImg').src = u; });
   $('#tdImg').alt = L(tp.name);
   $('#tdName').textContent = L(tp.name);
   $('#tdDesc').textContent = L(tp.desc);
@@ -128,6 +146,13 @@ function openDetail(id) {
 }
 
 document.addEventListener('click', (e) => {
+  const sb = e.target.closest('[data-style]');
+  if (sb) {
+    style = sb.dataset.style;
+    try { localStorage.setItem(STYLE_PREF, style); } catch {}
+    render();
+    return;
+  }
   const md = e.target.closest('[data-mode]');
   if (md) { mode = md.dataset.mode; filter = 'all'; render(); return; }
   const fl = e.target.closest('[data-filter]');
@@ -140,3 +165,4 @@ document.addEventListener('click', (e) => {
 $('#langBtn').addEventListener('click', () => setLang(getLang() === 'zh' ? 'en' : 'zh'));
 onLang(() => { render(); if ($('#tplDlg').open && current) openDetail(current.id); });
 render();
+loadManifest().then(() => { if (assetCount()) { clearFlowerCache(); renderStyleSeg(); } });

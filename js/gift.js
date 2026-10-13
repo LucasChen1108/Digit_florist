@@ -4,6 +4,7 @@ import { colorOf, FLOWERS } from './core/catalog.js';
 import { decodeGift } from './share.js';
 import { bouquetMeaning } from './core/meaning.js';
 import { downloadPng } from './export.js';
+import { preloadDesign, inlineAssets } from './core/assets.js';
 import { petalPath, shades } from './core/util.js';
 
 const $ = (s) => document.querySelector(s);
@@ -82,12 +83,15 @@ async function boot() {
   }
   if (!hasSavedLang()) setLang(gift.lang, false);
   fillText();
+  if (gift.design.style === 'photo') {
+    await Promise.race([preloadDesign(gift.design), new Promise((r) => setTimeout(r, 5000))]);
+  }
   $('#envArt').innerHTML = renderBouquet(gift.design, { prefix: 'ev', background: false }).svg;
   $('#openBtn').addEventListener('click', open);
   $('#replayBtn').addEventListener('click', () => { showBouquet(); $('#note').classList.remove('in'); void $('#note').offsetWidth; $('#note').classList.add('in'); });
   $('#saveBtn').addEventListener('click', async () => {
     toast(t('saving'));
-    const { svg } = renderBouquet(gift.design, { prefix: 'ex', width: 1400 });
+    const svg = await inlineAssets(renderBouquet(gift.design, { prefix: 'ex', width: 1400 }).svg);
     const c = gift.card;
     await downloadPng(svg, { card: { to: c.to ? t('dear', { name: c.to }) : '', msg: c.msg, from: c.from ? c.from : '' } });
   });

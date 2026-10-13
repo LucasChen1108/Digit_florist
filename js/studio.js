@@ -3,7 +3,8 @@ import {
   FLOWERS, DISPLAY_KEYS, GRADES, STAGES, DISTS, distsFor, SIZES, SIZE_KEYS, SHAPES, SHAPE_KEYS,
   GREENERY, WRAPS, WRAP_KEYS, RIBBONS, RIBBON_KEYS, TEMPLATES, colorOf, meaningOf,
 } from './core/catalog.js';
-import { renderBouquet, renderFlowerPreview, stemCount } from './core/bouquet.js';
+import { renderBouquet, renderFlowerPreview, stemCount, clearFlowerCache, STYLE_KEYS } from './core/bouquet.js';
+import { loadManifest, onAssetsReady, assetCount, inlineAssets, preloadDesign } from './core/assets.js';
 import { syncPlacement, groupKeys } from './core/placement.js';
 import { bouquetMeaning } from './core/meaning.js';
 import { esc } from './core/util.js';
@@ -13,6 +14,8 @@ import { downloadPng } from './export.js';
 
 const STORE = 'digit-florist-draft-v2';
 const OLD_STORE = 'digit-florist-draft-v1';
+const STYLE_PREF = 'digit-florist-style';
+const prefStyle = () => { try { const v = localStorage.getItem(STYLE_PREF); return STYLE_KEYS.includes(v) ? v : 'illustrated'; } catch { return 'illustrated'; } };
 const HERO = { lily: 'pink', hydrangea: 'blue', daisy: 'white' };
 const $ = (s, r = document) => r.querySelector(s);
 const nm = (c, f) => (getLang() === 'zh' ? `${L(c.name)}${L(f.name)}` : `${L(c.name)} ${L(f.name)}`);
@@ -30,6 +33,7 @@ function load() {
   } catch {}
   const st = s && Array.isArray(s.groups) ? { ...starter(), ...s } : starter();
   delete st.overrides;
+  if (!STYLE_KEYS.includes(st.style)) st.style = prefStyle();
   if (!st.place || typeof st.place !== 'object') st.place = {};
   st.groups.forEach(groupKeys);
   syncPlacement(st);
@@ -49,7 +53,7 @@ let pendingToast = '';
     const d = cloneDesign(tp);
     const card = { ...state.card };
     if (!card.msg || state.fromTpl) card.msg = tp.msg[getLang()] || tp.msg.en;
-    state = { ...state, ...d, card, nextId: d.groups.length + 1, fromTpl: tp.id };
+    state = { ...state, ...d, card, nextId: d.groups.length + 1, fromTpl: tp.id, style: prefStyle() };
     state.groups.forEach(groupKeys);
     syncPlacement(state);
     try { localStorage.setItem(STORE, JSON.stringify(state)); } catch {}
@@ -110,7 +114,7 @@ function scheduleStage() {
 
 function renderStage() {
   if (selected && !state.place[selected]) selected = null;
-  last = renderBouquet(state, { prefix: 'st', interactive: true, background: false, selected });
+  last = renderBouquet(state, { prefix: 'st', interactive: true, background: false, selected, soft: !(drag && drag.moved) });
   $('#stage').innerHTML = last.svg;
   const n = stemCount(state), cap = SIZES[state.size].cap;
   const pill = $('#countPill');
@@ -123,6 +127,13 @@ function renderStage() {
   $('#stage').classList.toggle('empty', n === 0);
   if (n === 0) $('#stage').insertAdjacentHTML('beforeend', `<p class="empty-msg">${esc(t('empty'))}</p>`);
   renderSelbar();
+}
+
+function renderStyleSeg() {
+  const avail = STYLE_KEYS.filter((k) => k !== 'photo' || assetCount() > 0 || state.style === 'photo');
+  $('#styleSeg').innerHTML = avail.map((k) =>
+    `<button type="button" role="radio" aria-checked="${state.style === k}" class="${state.style === k ? 'on' : ''}" data-act="style" data-v="${k}">${esc(t('style.' + k))}</button>`).join('');
+  $('#styleSeg').title = t('styleLabel');
 }
 
 function renderSelbar() {
@@ -216,9 +227,10 @@ function initDrag() {
   });
   const end = () => {
     if (!drag) return;
-    if (drag.moved) { save(); if (tab === 'arrange') renderPanel(); }
+    const moved = drag.moved;
     drag = null;
     stage.classList.remove('dragging');
+    if (moved) { save(); renderStage(); if (tab === 'arrange') renderPanel(); }
   };
   stage.addEventListener('pointerup', end);
   stage.addEventListener('pointercancel', end);
@@ -464,6 +476,13 @@ const ACTIONS = {
   clear: () => { state.groups = []; state.place = {}; selected = null; update(); },
   tmpl: (v) => { state.card.msg = TEMPLATES[+v][getLang()]; save(); const m = $('#cMsg'); if (m) m.value = state.card.msg; },
   send: () => openShare(),
+  style: (v) => {
+    if (!STYLE_KEYS.includes(v)) return;
+    state.style = v;
+    try { localStorage.setItem(STYLE_PREF, v); } catch {}
+    renderStyleSeg();
+    update({ panel: false });
+  },
   desel: () => { selected = null; renderStage(); },
   delstem: () => { if (!selected) return; removeStem(selected); update(); },
   facefront: () => { const p = state.place[selected]; if (p) { p.f = [p.f?.[0] ?? 0, 0]; p.m = 1; update({ panel: tab === 'arrange' }); } },
@@ -512,7 +531,8 @@ $('#shareDlg').addEventListener('click', async (e) => {
     window.open(shareUrl, '_blank', 'noopener');
   } else if (what === 'download') {
     toast(t('saving'));
-    const { svg } = renderBouquet(state, { prefix: 'ex', width: 1400 });
+    await preloadDesign(state);
+    const svg = await inlineAssets(renderBouquet(state, { prefix: 'ex', width: 1400 }).svg);
     const c = state.card;
     const m = bouquetMeaning(state, getLang());
     await downloadPng(svg, { card: { to: c.to ? t('dear', { name: c.to }) : '', msg: c.msg, from: c.from, meaning: m ? `${t('bouquetMeaning')} · ${m.closing}` : '' } });
@@ -521,9 +541,12 @@ $('#shareDlg').addEventListener('click', async (e) => {
 
 /* ---------------- boot ---------------- */
 $('#langBtn').addEventListener('click', () => setLang(getLang() === 'zh' ? 'en' : 'zh'));
-onLang(() => { renderStage(); renderPanel(); });
+onLang(() => { renderStyleSeg(); renderStage(); renderPanel(); });
+onAssetsReady(() => { clearFlowerCache(); scheduleStage(); });
 applyI18n();
 initDrag();
+renderStyleSeg();
 renderStage();
+loadManifest().then(() => { renderStyleSeg(); clearFlowerCache(); renderStage(); });
 renderPanel();
 if (pendingToast) toast(pendingToast);

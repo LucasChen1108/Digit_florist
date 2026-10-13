@@ -1,6 +1,7 @@
 // Composes a full bouquet SVG: paper wrap, greenery, stems, flowers, ribbon.
 import { FLOWERS, GRADES, STAGES, SIZES, WRAPS, RIBBONS, colorOf } from './catalog.js';
 import { renderFlower, leaf } from './flowers.js';
+import { foliageAssets } from './assets.js';
 import { boundaryAt, pointsInShape } from './layout.js';
 import { syncPlacement, expandStems, groupKeys } from './placement.js';
 import { Defs, F, rngFrom, tone, mix, radialGrad, linearGrad, hashStr } from './util.js';
@@ -12,15 +13,35 @@ function ctxFor(prefix) {
   return CTX.get(prefix);
 }
 
-function flowerFor(ctx, st) {
-  const key = `${st.type}|${st.color}|${st.grade}|${st.stage}|${st.seed}`;
+function flowerFor(ctx, st, style = 'illustrated') {
+  const key = `${style}|${st.type}|${st.color}|${st.grade}|${st.stage}|${st.seed}`;
   let v = ctx.cache.get(key);
   if (!v) {
     const cdef = colorOf(st.type, st.color);
-    v = renderFlower(st.type, { hex: cdef.hex, cdef, grade: st.grade, stage: st.stage, rng: rngFrom(st.seed, 'f'), defs: ctx.defs });
-    ctx.cache.set(key, v);
+    const fc = { hex: cdef.hex, cdef, grade: st.grade, stage: st.stage, rng: rngFrom(st.seed, 'f'), defs: ctx.defs, style, kind: FLOWERS[st.type].kind, seedInt: st.seed };
+    v = renderFlower(st.type, fc);
+    if (!fc.pending) ctx.cache.set(key, v); // photo still loading → draw illustrated for now, retry later
   }
   return v;
+}
+
+/** Forget cached flower drawings (e.g. after photo assets finish loading). */
+export function clearFlowerCache() {
+  for (const c of CTX.values()) c.cache.clear();
+}
+
+export const STYLE_KEYS = ['illustrated', 'watercolor', 'photo'];
+
+function watercolorFilter(defs) {
+  const id = defs.id('wc');
+  defs.add(id, `<filter id="${id}" x="-4%" y="-4%" width="108%" height="108%" color-interpolation-filters="sRGB"><feTurbulence type="fractalNoise" baseFrequency=".022" numOctaves="3" seed="4" result="warp"/><feDisplacementMap in="SourceGraphic" in2="warp" scale="9" xChannelSelector="R" yChannelSelector="G" result="d"/><feGaussianBlur in="d" stdDeviation="1.1" result="soft"/><feGaussianBlur in="d" stdDeviation="5" result="wide"/><feComposite in="soft" in2="wide" operator="arithmetic" k2="1.6" k3="-.6" result="edge"/><feColorMatrix in="edge" type="saturate" values=".9" result="sat"/><feTurbulence type="fractalNoise" baseFrequency=".09" numOctaves="3" seed="9" result="grain"/><feColorMatrix in="grain" type="matrix" values="0 0 0 0 .32 0 0 0 0 .22 0 0 0 0 .18 .3 0 0 0 -.11" result="g2"/><feComposite in="g2" in2="sat" operator="in" result="g3"/><feMerge><feMergeNode in="sat"/><feMergeNode in="g3"/></feMerge></filter>`);
+  return id;
+}
+
+function paperBgFilter(defs) {
+  const id = defs.id('wcpaper');
+  defs.add(id, `<filter id="${id}" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency=".6" numOctaves="3" seed="12" result="n"/><feColorMatrix in="n" type="matrix" values="0 0 0 0 .55 0 0 0 0 .45 0 0 0 0 .38 .4 0 0 0 -.12" result="s"/><feComposite in="s" in2="SourceGraphic" operator="in" result="t"/><feMerge><feMergeNode in="SourceGraphic"/><feMergeNode in="t"/></feMerge></filter>`);
+  return id;
 }
 
 export { expandStems };
@@ -119,6 +140,12 @@ function stemTails(D, neckY, n, rng) {
   return o;
 }
 
+function softFocus(defs) {
+  const id = defs.id('soft');
+  defs.add(id, `<filter id="${id}" x="-5%" y="-5%" width="110%" height="110%" color-interpolation-filters="sRGB"><feGaussianBlur in="SourceGraphic" stdDeviation="5" result="b"/><feColorMatrix in="b" type="saturate" values="1.25" result="bs"/><feComponentTransfer in="bs" result="glow"><feFuncA type="linear" slope=".38"/></feComponentTransfer><feGaussianBlur in="SourceGraphic" stdDeviation=".55" result="s"/><feMerge><feMergeNode in="s"/><feMergeNode in="glow"/></feMerge></filter>`);
+  return id;
+}
+
 function paperFilter(defs) {
   const id = defs.id('paper');
   defs.add(id, `<filter id="${id}" x="-5%" y="-5%" width="110%" height="110%"><feTurbulence type="fractalNoise" baseFrequency=".85" numOctaves="2" seed="7" result="n"/><feColorMatrix in="n" type="matrix" values="0 0 0 0 .2  0 0 0 0 .14  0 0 0 0 .1  .5 0 0 0 -.2" result="s"/><feComposite in="s" in2="SourceGraphic" operator="in" result="t"/><feMerge><feMergeNode in="SourceGraphic"/><feMergeNode in="t"/></feMerge></filter>`);
@@ -126,7 +153,8 @@ function paperFilter(defs) {
 
 /* ---------------- main ---------------- */
 export function renderBouquet(design, opts = {}) {
-  const { prefix = 'b', interactive = false, animate = false, background = true, width, height, selected = null } = opts;
+  const { prefix = 'b', interactive = false, animate = false, background = true, width, height, selected = null, soft = true } = opts;
+  const style = STYLE_KEYS.includes(opts.style || design.style) ? opts.style || design.style : 'illustrated';
   const ctx = ctxFor(prefix);
   const defs = ctx.defs;
   paperFilter(defs);
@@ -160,7 +188,8 @@ export function renderBouquet(design, opts = {}) {
   let bg = '';
   if (background) {
     const g = radialGrad(defs, 'bg', [[0, '#fffaf4'], [0.65, '#f6ede3'], [1, '#ecdfd2']], { cx: 0.5, cy: 0.4, r: 0.75 });
-    bg = `<rect x="${F(vb[0])}" y="${F(vb[1])}" width="${F(vb[2])}" height="${F(vb[3])}" fill="${g}"/>`;
+    const wcbg = style === 'watercolor' ? ` filter="url(#${paperBgFilter(defs)})"` : '';
+    bg = `<rect x="${F(vb[0])}" y="${F(vb[1])}" width="${F(vb[2])}" height="${F(vb[3])}" fill="${g}"${wcbg}/>`;
   }
   const halo = radialGrad(defs, 'halo', [[0, '#5a3a2a', 0.16], [0.6, '#5a3a2a', 0.06], [1, '#5a3a2a', 0]], { cx: 0.5, cy: 0.5, r: 0.5 });
   bg += `<ellipse cx="0" cy="${F(D * 0.25)}" rx="${F(D * 1.45)}" ry="${F(D * 1.55)}" fill="${halo}"/>`;
@@ -182,12 +211,19 @@ export function renderBouquet(design, opts = {}) {
   /* greenery */
   let green = '';
   const lv = design.greenery ?? 2;
+  const photoLeaves = style === 'photo' ? foliageAssets() : [];
+  const leafOf = (r, L) => {
+    if (!photoLeaves.length) return leaf(defs, r, L);
+    const a = photoLeaves[Math.floor(r() * photoLeaves.length)];
+    const W = L / Math.max(0.05, a.r), H = (W * a.h) / a.w;
+    return `<image href="${a.url}" x="${F(-a.ax * W)}" y="${F(-a.ay * H)}" width="${F(W)}" height="${F(H)}" preserveAspectRatio="none"/>`;
+  };
   if (lv > 0) {
     const grng = rngFrom(design.seed, 'green', design.shape);
     const inner = pointsInShape(design.shape, Math.ceil((lv * (blooms.length + 4)) / 1.5), grng);
     for (const p of inner) {
       const L = De * (0.24 + grng() * 0.12);
-      green += `<g transform="translate(${F(p.x * Rp * 0.9)} ${F(p.y * Rp * 0.9)}) rotate(${F(grng() * 360)})">${leaf(defs, grng, L)}</g>`;
+      green += `<g transform="translate(${F(p.x * Rp * 0.9)} ${F(p.y * Rp * 0.9)}) rotate(${F(grng() * 360)})">${leafOf(grng, L)}</g>`;
     }
     const ring = Math.round(lv * (7 + De / 30));
     for (let i = 0; i < ring; i++) {
@@ -195,7 +231,7 @@ export function renderBouquet(design, opts = {}) {
       const b = boundaryAt(design.shape, th) * Rp * (0.82 + grng() * 0.1);
       const L = De * (0.3 + grng() * 0.14);
       const deg = (th * 180) / Math.PI + (grng() - 0.5) * 24;
-      green += `<g transform="translate(${F(Math.sin(th) * b)} ${F(-Math.cos(th) * b)}) rotate(${F(deg)})">${leaf(defs, grng, L)}</g>`;
+      green += `<g transform="translate(${F(Math.sin(th) * b)} ${F(-Math.cos(th) * b)}) rotate(${F(deg)})">${leafOf(grng, L)}</g>`;
     }
   }
 
@@ -205,7 +241,7 @@ export function renderBouquet(design, opts = {}) {
   let idx = 0;
   for (const s of stems) {
     const p = pos.get(s.id);
-    const fl = flowerFor(ctx, s);
+    const fl = flowerFor(ctx, s, style);
     const r2 = rngFrom(s.seed, 't');
     let inner, z;
     const f = p.f;
@@ -280,18 +316,21 @@ export function renderBouquet(design, opts = {}) {
     sel += '</g>';
   }
 
-  const body = `${bg}${back}<g${A('fade', 0.3)}>${stemsSvg}</g><g${A('fade', 0.35)}>${green}</g><g class="head">${head}</g>${front}${sel}`;
+  const headFilter = soft && style === 'illustrated' ? ` filter="url(#${softFocus(defs)})"` : '';
+  let scene = `${back}<g${A('fade', 0.3)}>${stemsSvg}</g><g${A('fade', 0.35)}>${green}</g><g class="head"${headFilter}>${head}</g>${front}`;
+  if (style === 'watercolor' && soft) scene = `<g filter="url(#${watercolorFilter(defs)})">${scene}</g>`;
+  const body = `${bg}${scene}${sel}`;
   const wh = width ? ` width="${width}" height="${height ?? Math.round((width * vb[3]) / vb[2])}"` : '';
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${vb.map(F).join(' ')}"${wh} role="img"><defs>${defs.markup()}</defs>${body}</svg>`;
-  return { svg, pos, D, De, Rp, stems, viewBox: vb };
+  return { svg, pos, D, De, Rp, stems, viewBox: vb, style };
 }
 
 /** A single flower on a transparent square, for pickers and lists. */
-export function renderFlowerPreview(type, colorId, grade, stage, prefix, seed = 7) {
+export function renderFlowerPreview(type, colorId, grade, stage, prefix, seed = 7, style = 'illustrated') {
   const ctx = ctxFor(prefix);
   const def = FLOWERS[type];
   const st = { type, color: colorId, grade, stage: def.stages ? stage : 2, seed: hashStr(`${type}${seed}`) };
-  const fl = flowerFor(ctx, st);
+  const fl = flowerFor(ctx, st, style);
   let vb, inner = fl.svg;
   if (def.kind === 'sprig') {
     vb = '-70 -150 140 160';

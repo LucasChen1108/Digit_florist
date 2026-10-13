@@ -526,3 +526,13 @@ svg .fade { animation: fadeUp 0.9s ease both; }
   .lib-chips { flex-wrap: nowrap; overflow-x: auto; justify-content: flex-start; padding-bottom: 4px; scrollbar-width: none; margin: 0 -16px; padding-left: 16px; padding-right: 16px; }
   .lib-chips .chip { flex: none; }
 }
+
+/* ---------- art style switch ---------- */
+.style-seg button { padding: 6px 11px; font-size: 13px; }
+.lib-style { align-items: center; }
+.lib-style span { font-size: 12.5px; color: var(--muted); font-weight: 600; padding: 0 8px 0 10px; }
+@media (max-width: 600px) {
+  .stage-actions .icon-btn span { display: none; }
+  .stage-actions .icon-btn { padding: 7px 9px; }
+  .style-seg button { padding: 5px 8px; font-size: 12px; }
+}

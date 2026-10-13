@@ -2,6 +2,7 @@
 // Format: "1" + base64url(deflate-raw(json))  or  "0" + base64url(json) as a fallback.
 import { FLOWERS, TYPE_KEYS, DIST_KEYS, SIZE_KEYS, SHAPE_KEYS, WRAP_KEYS, RIBBON_KEYS } from './core/catalog.js';
 import { groupKeys, syncPlacement } from './core/placement.js';
+const STYLES = ['illustrated', 'watercolor', 'photo'];
 
 const b64url = (bytes) => {
   let bin = '';
@@ -35,7 +36,7 @@ export function pack(design, card, lang) {
     v: 2,
     z: idx(SIZE_KEYS, design.size), h: idx(SHAPE_KEYS, design.shape),
     w: idx(WRAP_KEYS, design.wrap), r: idx(RIBBON_KEYS, design.ribbon),
-    e: design.greenery, s: design.seed,
+    e: design.greenery, s: design.seed, y: Math.max(0, STYLES.indexOf(design.style)),
     g: design.groups.map((g) => {
       const f = FLOWERS[g.type];
       const keys = groupKeys(g);
@@ -74,7 +75,7 @@ export function unpack(p) {
   }
   const design = {
     size: SIZE_KEYS[p.z] || 'M', shape: SHAPE_KEYS[p.h] || 'round', wrap: WRAP_KEYS[p.w] || 'kraft',
-    ribbon: RIBBON_KEYS[p.r] || 'ivory', greenery: p.e ?? 2, seed: p.s ?? 1, groups, place,
+    ribbon: RIBBON_KEYS[p.r] || 'ivory', greenery: p.e ?? 2, seed: p.s ?? 1, groups, place, style: STYLES[p.y] || 'illustrated',
   };
   syncPlacement(design);
   return {
