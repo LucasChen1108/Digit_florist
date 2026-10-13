@@ -356,7 +356,135 @@ function babysbreath({ hex, grade, rng, defs }) {
   return { svg: o + fl, r: 38 };
 }
 
-export const RENDERERS = { rose, tulip, peony, sunflower, lily, carnation, daisy, hydrangea, lavender, eucalyptus, babysbreath };
+/* ---------------- Anemone ---------------- */
+function anemone({ hex, grade, stage, rng, defs, cdef }) {
+  const s = shades(hex), k = 'an' + hex;
+  const L = [24, 38, 46][stage];
+  const g = radialGrad(defs, k, [[0, cdef?.eye ? tone(hex, { l: -10 }) : s.dark], [0.35, s.base], [0.85, s.light], [1, s.pale]], { r: 1.05 });
+  const gb = radialGrad(defs, k + 'b', [[0, s.deep], [0.45, s.dark], [1, s.base]], { r: 1.05 });
+  const n = [5, 6, 7][grade];
+  const rot = rng() * 360;
+  let o = '';
+  for (let i = 0; i < n; i++) {
+    const a = rot + ((i + 0.5) * 360) / n + (rng() - 0.5) * 10, LL = L * (0.9 + rng() * 0.1);
+    o += `<path d="${petalPath(LL, LL * 0.5, { tip: 'round', widest: 0.62, rng, jitter: 0.04 })}" transform="rotate(${F(a)})" fill="${gb}" stroke="${s.deep}" stroke-opacity=".25" stroke-width=".6"/>`;
+  }
+  for (let i = 0; i < n; i++) {
+    const a = rot + (i * 360) / n + (rng() - 0.5) * 10, LL = L * (0.86 + rng() * 0.1);
+    o += `<g transform="rotate(${F(a)})"><path d="${petalPath(LL, LL * 0.52, { tip: 'ruffle', bumps: 2, ruffle: 0.04, widest: 0.64, rng, jitter: 0.03 })}" fill="${g}" stroke="${s.dark}" stroke-opacity=".22" stroke-width=".6"/>`;
+    for (const vx of [-0.18, 0, 0.18]) o += `<path d="M0 -5Q${F(vx * LL * 0.6)} ${F(-LL * 0.5)} ${F(vx * LL)} ${F(-LL * 0.85)}" stroke="${s.dark}" stroke-opacity=".14" stroke-width=".6" fill="none"/>`;
+    o += '</g>';
+  }
+  const eye = cdef?.eye || '#1d1a2e';
+  const cr = L * 0.27;
+  o += `<circle r="${F(cr * 1.9)}" fill="${eye}" opacity=".12"/>`;
+  const m = 40;
+  for (let i = 0; i < m; i++) {
+    const a = (i / m) * Math.PI * 2 + rng() * 0.1, r1 = cr * 0.8, r2 = cr * (1.45 + rng() * 0.35);
+    const x2 = Math.cos(a) * r2, y2 = Math.sin(a) * r2;
+    o += `<path d="M${F(Math.cos(a) * r1)} ${F(Math.sin(a) * r1)}L${F(x2)} ${F(y2)}" stroke="${eye}" stroke-width=".55" opacity=".85"/><circle cx="${F(x2)}" cy="${F(y2)}" r=".95" fill="${eye}"/>`;
+  }
+  const gc = radialGrad(defs, 'aneye' + eye, [[0, tone(eye, { l: 22 })], [0.6, eye], [1, tone(eye, { l: -6 })]], { cx: 0.4, cy: 0.38, r: 0.6 });
+  o += `<circle r="${F(cr)}" fill="${gc}"/><circle cx="${F(-cr * 0.3)}" cy="${F(-cr * 0.3)}" r="${F(cr * 0.25)}" fill="#fff" opacity=".18"/>`;
+  if (grade === 2) o += dew(rng, L * 0.7, defs, 2);
+  return { svg: o, r: L };
+}
+
+/* ---------------- Ranunculus ---------------- */
+function ranunculus({ hex, grade, stage, rng, defs }) {
+  const s = shades(hex), k = 'ra' + hex;
+  const gO = radialGrad(defs, k + 'o', [[0, s.dark], [0.5, s.base], [0.9, s.light], [1, s.pale]], { r: 1.05 });
+  const gI = radialGrad(defs, k + 'i', [[0, s.deep], [0.6, s.dark], [1, s.base]], { r: 1.05 });
+  const nL = [9, 11, 13][grade];
+  const R = [30, 42, 48][stage];
+  let o = '';
+  let rot = rng() * 360;
+  for (let i = 0; i < nL; i++) {
+    const t = i / (nL - 1);
+    const r = R * (1 - t * 0.86);
+    const n = Math.max(4, Math.round(9 - t * 4));
+    if (i > 0) o += shadowDisc(defs, s.deep, r * 1.1, 0.35);
+    rot += 360 / n / 2.4 + rng() * 10;
+    const gr = t < 0.55 ? gO : gI;
+    for (let p = 0; p < n; p++) {
+      const a = rot + (p * 360) / n;
+      const L = r * (0.96 + rng() * 0.06), W = L * Math.sin(Math.PI / n) * 1.55;
+      o += `<path d="${petalPath(L, W, { tip: 'round', widest: 0.66, rng, jitter: 0.02 })}" transform="rotate(${F(a)})" fill="${gr}" stroke="${s.pale}" stroke-opacity=".7" stroke-width=".6"/>`;
+    }
+  }
+  const eye = stage < 2 ? '#9fb36a' : s.deep;
+  o += `<circle r="${F(R * 0.09)}" fill="${eye}"/>`;
+  if (grade === 2) o += dew(rng, R * 0.7, defs, 2);
+  return { svg: o, r: R };
+}
+
+/* ---------------- Lisianthus ---------------- */
+function lisianthus({ hex, grade, stage, rng, defs, cdef }) {
+  const s = shades(hex), k = 'ls' + hex + (cdef?.rim || '');
+  const rim = cdef?.rim;
+  const g = radialGrad(defs, k, rim
+    ? [[0, mix(hex, '#cfd9a0', 0.3)], [0.45, hex], [0.75, mix(hex, rim, 0.35)], [1, rim]]
+    : [[0, mix(s.dark, '#b8c77c', 0.25)], [0.4, s.base], [0.85, s.light], [1, s.pale]], { r: 1.05 });
+  const R = [26, 38, 46][stage];
+  let o = '';
+  if (stage === 0) {
+    // closed spiral bud
+    let rr = rng() * 360;
+    for (let l = 0; l < 3; l++) {
+      const r = R * (1 - l * 0.25);
+      if (l) o += shadowDisc(defs, s.deep, r * 1.1, 0.4);
+      rr += 50;
+      for (let p = 0; p < 5; p++) {
+        o += `<path d="${petalPath(r, r * 0.8, { tip: 'round', widest: 0.64, rng, jitter: 0.03 })}" transform="rotate(${F(rr + p * 72)}) translate(${F(r * 0.12)} 0)" fill="${g}" stroke="${s.pale}" stroke-opacity=".7" stroke-width=".6"/>`;
+      }
+    }
+    o += `<circle r="${F(R * 0.1)}" fill="${s.dark}" opacity=".5"/>`;
+    return { svg: o, r: R };
+  }
+  const layers = grade === 0 ? 2 : grade === 1 ? 3 : 4;
+  let rot = rng() * 360;
+  for (let l = 0; l < layers; l++) {
+    const r = R * (1 - l * 0.2);
+    if (l > 0) o += shadowDisc(defs, s.deep, r * 1.08, 0.4);
+    rot += 36 + rng() * 14;
+    for (let p = 0; p < 5; p++) {
+      const a = rot + p * 72;
+      const L = r * (0.92 + rng() * 0.1);
+      o += `<path d="${petalPath(L, L * 0.62, { tip: 'ruffle', bumps: 4, ruffle: 0.06, widest: 0.66, rng, jitter: 0.03 })}" transform="rotate(${F(a)}) translate(${F(L * 0.08)} 0)" fill="${g}" stroke="${s.pale}" stroke-opacity=".7" stroke-width=".6"/>`;
+    }
+  }
+  const cr = R * 0.2;
+  o += shadowDisc(defs, s.deep, cr * 1.8, 0.7);
+  for (let i = 0; i < 5; i++) {
+    const a = (rot + i * 72) * RAD;
+    o += `<ellipse cx="${F(Math.cos(a) * cr * 0.6)}" cy="${F(Math.sin(a) * cr * 0.6)}" rx="1.6" ry="2.8" transform="rotate(${F(a / RAD + 90)} ${F(Math.cos(a) * cr * 0.6)} ${F(Math.sin(a) * cr * 0.6)})" fill="#e7cf63"/>`;
+  }
+  o += `<circle r="${F(cr * 0.35)}" fill="#b9c96e"/>`;
+  if (grade === 2) o += dew(rng, R * 0.7, defs, 2);
+  return { svg: o, r: R };
+}
+
+/* ---------------- Craspedia / billy buttons (sprig) ---------------- */
+function craspedia({ hex, grade, rng, defs }) {
+  const s = shades(hex);
+  const g = radialGrad(defs, 'cr' + hex, [[0, s.pale], [0.5, s.base], [1, s.dark]], { cx: 0.38, cy: 0.35, r: 0.7 });
+  const n = [2, 3, 4][grade];
+  let o = '', heads = '';
+  for (let j = 0; j < n; j++) {
+    const ang = (j - (n - 1) / 2) * 13 + (rng() - 0.5) * 8, len = 95 + rng() * 35;
+    const rad = ang * RAD, x = Math.sin(rad) * len, y = -Math.cos(rad) * len;
+    o += `<path d="M0 0Q${F(x * 0.3 + (rng() - 0.5) * 6)} ${F(y * 0.5)} ${F(x)} ${F(y)}" stroke="#7d9a52" stroke-width="1.4" fill="none"/>`;
+    const r = 9 + rng() * 2;
+    heads += `<circle cx="${F(x)}" cy="${F(y)}" r="${F(r)}" fill="${g}"/>`;
+    for (let i = 0; i < 26; i++) {
+      const rr = Math.sqrt(i / 26) * r * 0.9, th = i * GOLDEN;
+      heads += `<circle cx="${F(x + Math.cos(th) * rr)}" cy="${F(y + Math.sin(th) * rr)}" r=".9" fill="${s.dark}" opacity=".45"/>`;
+    }
+  }
+  return { svg: o + heads, r: 50 };
+}
+
+export const RENDERERS = { rose, tulip, peony, sunflower, lily, carnation, daisy, hydrangea, lavender, eucalyptus, babysbreath, anemone, ranunculus, lisianthus, craspedia };
 
 export function renderFlower(type, ctx) {
   return (RENDERERS[type] || rose)(ctx);
@@ -367,6 +495,28 @@ const LEAF_GREENS = ['#3e5c3a', '#4b6b40', '#5c7b47', '#36513a', '#6a8650'];
 export function leaf(defs, rng, L) {
   const col = LEAF_GREENS[Math.floor(rng() * LEAF_GREENS.length)];
   const g = linearGrad(defs, 'lf' + col, [[0, tone(col, { l: -10 })], [0.55, col], [1, tone(col, { l: 12, s: -5 })]], { x1: 0, y1: 1, x2: 0, y2: 0 });
+  const kind = rng();
+  if (kind < 0.22) {
+    // fern / leatherleaf frond
+    let o = `<path d="M0 0Q${F(L * 0.04)} ${F(-L * 0.5)} 0 ${F(-L)}" stroke="${tone(col, { l: -8 })}" stroke-width="1.2" fill="none"/>`;
+    const n = 9;
+    for (let i = 1; i <= n; i++) {
+      const t = i / (n + 1), y = -L * t, len = L * 0.26 * Math.sin(Math.PI * (0.15 + t * 0.85)) + L * 0.04;
+      for (const sd of [-1, 1]) {
+        o += `<path d="${petalPath(len, len * 0.22, { tip: 'point', widest: 0.4 })}" transform="translate(0 ${F(y)}) rotate(${sd * (62 - t * 20)})" fill="${g}"/>`;
+      }
+    }
+    return o;
+  }
+  if (kind < 0.36) {
+    // ruscus-like small glossy leaves on a stem
+    let o = `<path d="M0 0L0 ${F(-L * 0.95)}" stroke="#4d6b3c" stroke-width="1.1"/>`;
+    for (let i = 0; i < 5; i++) {
+      const t = 0.2 + i * 0.18, sd = i % 2 ? 1 : -1, ll = L * (0.32 - t * 0.12);
+      o += `<path d="${petalPath(ll, ll * 0.3, { tip: 'point', widest: 0.5, rng })}" transform="translate(0 ${F(-L * t)}) rotate(${sd * 35})" fill="${g}" stroke="${tone(col, { l: -14 })}" stroke-opacity=".4" stroke-width=".6"/>`;
+    }
+    return o;
+  }
   const W = L * (0.2 + rng() * 0.1);
   const d = petalPath(L, W, { tip: 'point', widest: 0.45, rng, jitter: 0.03 });
   return `<path d="${d}" fill="${g}" stroke="${tone(col, { l: -16 })}" stroke-opacity=".4" stroke-width=".8"/>` +

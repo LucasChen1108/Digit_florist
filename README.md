@@ -3,10 +3,10 @@
 Hand-tie a digital bouquet and send it as a link. 亲手扎一束电子花束，以链接的形式送出。
 
 - **Bilingual** – English / 简体中文, switchable at any time (remembers your choice).
-- **11 flowers** – rose, tulip, peony, sunflower, lily, carnation, daisy, hydrangea, lavender, eucalyptus, baby's breath — each with several colours, three quality grades (Classic / Premium / Luxe) and three bloom stages (bud / blooming / full bloom).
+- **15 flowers** – rose, peony, ranunculus, lisianthus, tulip, anemone, sunflower, lily, carnation, daisy, hydrangea, baby's breath, eucalyptus, lavender, billy buttons — each with several colours, three quality grades (Classic / Premium / Luxe) and three bloom stages (bud / blooming / full bloom).
 - **Arrangement** – per flower type choose *spread evenly*, *cluster* (1–3 clusters), *centerpiece* or *outer ring*; pick a round, wide-fan or heart-shaped head; or simply drag any flower on the bouquet.
 - **Wrapping** – 4 sizes (11 / 33 / 66 / 99 stems), 7 papers, 7 satin ribbons, adjustable greenery.
-- **Template library** – 26 ready-made bouquets (`library.html`) browsable by occasion, style or flower language; open one in the studio and change anything.
+- **Template library** – 42 ready-made bouquets (`library.html`) browsable by occasion, style or flower language; open one in the studio and change anything.
 - **Flower language** – every colour has its own meaning, and the whole bouquet gets a generated reading.
 - **Gifting** – write a card, get a share link. The recipient opens an envelope, the bouquet blooms in, petals drift down, and they can save it as an image.
 

@@ -114,6 +114,50 @@ export const FLOWERS = {
     meaning: { en: 'Protection and healing', zh: '恩赐与守护' },
     colors: [c('silver', '#8fa89a', 'Silver Dollar', '银叶'), c('sage', '#a7b59a', 'Sage', '鼠尾草绿')],
   },
+  ranunculus: {
+    kind: 'bloom', size: 0.92, stages: true,
+    name: { en: 'Ranunculus', zh: '洋牡丹' },
+    meaning: { en: 'Radiant charm', zh: '迷人的魅力' },
+    colors: [
+      c('blush', '#f7c9c3', 'Blush', '奶油粉'),
+      c('coral', '#f59a7c', 'Coral', '珊瑚'),
+      c('white', '#f8f4ec', 'Ivory', '象牙白'),
+      c('butter', '#f7dc8a', 'Butter', '奶油黄'),
+      c('burgundy', '#8a2140', 'Burgundy', '酒红'),
+      c('orange', '#f38a3c', 'Tangerine', '橘色'),
+    ],
+  },
+  lisianthus: {
+    kind: 'bloom', size: 0.95, stages: true,
+    name: { en: 'Lisianthus', zh: '洋桔梗' },
+    meaning: { en: 'Sincere, unchanging love', zh: '真诚不变的爱' },
+    colors: [
+      c('white', '#f8f6f0', 'White', '纯白'),
+      c('champagne', '#efdcc0', 'Champagne', '香槟'),
+      c('pink', '#f2b6c8', 'Pink', '粉'),
+      c('purple', '#8d5bb0', 'Purple', '紫'),
+      c('lime', '#dde8b4', 'Lime', '青柠'),
+      c('rim', '#f7f3f6', 'Purple Rim', '紫边', { rim: '#7d4aa6' }),
+    ],
+  },
+  anemone: {
+    kind: 'bloom', size: 0.9, stages: true,
+    name: { en: 'Anemone', zh: '银莲花' },
+    meaning: { en: 'Anticipation', zh: '期待' },
+    colors: [
+      c('panda', '#f8f6f2', 'Panda White', '熊猫白', { eye: '#16142a' }),
+      c('red', '#c8213a', 'Scarlet', '绯红', { eye: '#1b1020' }),
+      c('violet', '#6a3d9a', 'Violet', '紫罗兰', { eye: '#15102a' }),
+      c('pink', '#ef9ab8', 'Pink', '粉', { eye: '#2a1830' }),
+      c('blue', '#4f6fb8', 'Blue', '蓝', { eye: '#14162a' }),
+    ],
+  },
+  craspedia: {
+    kind: 'sprig',
+    name: { en: 'Billy buttons', zh: '金槌花' },
+    meaning: { en: 'Good health and good luck', zh: '健康与好运' },
+    colors: [c('gold', '#f2bf2a', 'Gold', '金黄')],
+  },
   babysbreath: {
     kind: 'filler',
     name: { en: 'Baby’s breath', zh: '满天星' },
@@ -122,7 +166,8 @@ export const FLOWERS = {
   },
 };
 
-export const TYPE_KEYS = ['rose', 'tulip', 'peony', 'sunflower', 'lily', 'carnation', 'daisy', 'hydrangea', 'lavender', 'eucalyptus', 'babysbreath'];
+export const DISPLAY_KEYS = ['rose', 'peony', 'ranunculus', 'lisianthus', 'tulip', 'anemone', 'sunflower', 'lily', 'carnation', 'daisy', 'hydrangea', 'babysbreath', 'eucalyptus', 'lavender', 'craspedia'];
+export const TYPE_KEYS = ['rose', 'tulip', 'peony', 'sunflower', 'lily', 'carnation', 'daisy', 'hydrangea', 'lavender', 'eucalyptus', 'babysbreath', 'anemone', 'ranunculus', 'lisianthus', 'craspedia'];
 
 export const GRADES = [
   { name: { en: 'Classic', zh: '经典' }, desc: { en: 'Simple, fresh blooms', zh: '简约清新' }, f: 0.9 },
@@ -224,7 +269,7 @@ export const COLOR_MEANINGS = {
     white: M('purity and respect', '纯洁与尊敬', 'bless'),
     champagne: M('“you are the only one for me”', '我只钟情你一人', 'love'),
     yellow: M('friendship and joy', '友谊与真挚的快乐', 'joy'),
-    coral: M('enthusiasm and desire', '热情与渴望', 'love'),
+    coral: M('enthusiasm and desire', '热情与渴望', 'joy'),
     lilac: M('enchantment, love at first sight', '浪漫与一见钟情', 'love'),
     blue: M('a rare and precious love', '奇迹般珍贵的爱', 'love'),
     black: M('one-of-a-kind devotion', '独一无二的真心', 'love'),
@@ -282,8 +327,34 @@ export const COLOR_MEANINGS = {
     silver: M('protection and healing', '恩赐与守护', 'hope'),
     sage: M('peace and renewal', '平和与新生', 'hope'),
   },
+  ranunculus: {
+    blush: M('radiant charm', '迷人的魅力', 'love'),
+    coral: M('“you are irresistible”', '你魅力无限', 'love'),
+    white: M('gentle grace', '温柔与优雅', 'bless'),
+    butter: M('a sunny heart', '阳光般的心情', 'joy'),
+    burgundy: M('deep allure', '深情的吸引', 'love'),
+    orange: M('bright enthusiasm', '明媚的热情', 'joy'),
+  },
+  lisianthus: {
+    white: M('sincere, unchanging love', '真诚不变的爱', 'bless'),
+    champagne: M('gentle gratitude', '温柔的感谢', 'thanks'),
+    pink: M('tender affection', '温柔的爱意', 'love'),
+    purple: M('lasting devotion', '永恒的守候', 'love'),
+    lime: M('fresh hope', '清新的希望', 'hope'),
+    rim: M('unchanging love', '不变的爱', 'love'),
+  },
+  anemone: {
+    panda: M('anticipation', '期待', 'hope'),
+    red: M('a heart that’s yours', '把心交给你', 'love'),
+    violet: M('faith and loyalty', '信任与忠诚', 'love'),
+    pink: M('sweet anticipation', '甜蜜的期待', 'love'),
+    blue: M('hope and calm', '希望与宁静', 'hope'),
+  },
+  craspedia: {
+    gold: M('good health and good luck', '健康与好运', 'hope'),
+  },
   babysbreath: {
-    white: M('pure, lasting longing', '纯洁的思念', 'love'),
+    white: M('pure, lasting longing', '纯洁的思念', 'bless'),
     pink: M('sweet companionship', '甜蜜的陪伴', 'love'),
     blue: M('quiet devotion', '默默的守候', 'hope'),
   },

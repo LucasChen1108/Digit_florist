@@ -47,7 +47,7 @@ const DICT = {
     'by.occasion': 'By occasion', 'by.theme': 'By style', 'by.language': 'By flower language', all: 'All',
     stemsN: '{n} stems', useTpl: 'Use & customise', sendTpl: 'Write a card & send',
     tplLoaded: 'Template “{name}” loaded — make it yours!',
-    browseTpl: 'Start from a template', browseTplSub: '26 ready-made bouquets by occasion, style and flower language',
+    browseTpl: 'Start from a template', browseTplSub: '{n} ready-made bouquets by occasion, style and flower language',
   },
   zh: {
     brand: '数字花坊',
@@ -95,7 +95,7 @@ const DICT = {
     'by.occasion': '按用途', 'by.theme': '按风格', 'by.language': '按花语', all: '全部',
     stemsN: '{n} 枝', useTpl: '使用并修改', sendTpl: '直接写贺卡送出',
     tplLoaded: '已载入模板「{name}」，随意修改吧！',
-    browseTpl: '从模板开始', browseTplSub: '26 款现成花束，按用途、风格和花语分类',
+    browseTpl: '从模板开始', browseTplSub: '{n} 款现成花束，按用途、风格和花语分类',
   },
 };
 

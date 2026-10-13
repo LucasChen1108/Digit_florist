@@ -141,7 +141,7 @@ export function renderBouquet(design, opts = {}) {
   const nominal = (s) => 50 * (FLOWERS[s.type].size || 1) * GRADES[s.grade].f * STAGES[s.stage].f;
   const sumA = blooms.reduce((a, s) => a + Math.PI * nominal(s) ** 2, 0) || 1;
   const domeA = Math.PI * (D * 0.95) ** 2 * 0.85;
-  const gs = Math.min(1.7, Math.max(0.5, Math.sqrt((0.86 * domeA) / sumA)));
+  const gs = Math.min(1.38, Math.max(0.5, Math.sqrt((0.86 * domeA) / sumA)));
   const De = D * Math.max(0.5, Math.min(1, Math.sqrt((sumA * gs * gs) / (0.86 * domeA))));
   const Rp = De * 0.82;
 

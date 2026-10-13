@@ -1,13 +1,13 @@
 import { t, L, getLang, setLang, onLang, applyI18n } from './i18n.js';
 import {
-  FLOWERS, TYPE_KEYS, GRADES, STAGES, DISTS, distsFor, SIZES, SIZE_KEYS, SHAPES, SHAPE_KEYS,
+  FLOWERS, DISPLAY_KEYS, GRADES, STAGES, DISTS, distsFor, SIZES, SIZE_KEYS, SHAPES, SHAPE_KEYS,
   GREENERY, WRAPS, WRAP_KEYS, RIBBONS, RIBBON_KEYS, TEMPLATES, colorOf, meaningOf,
 } from './core/catalog.js';
 import { renderBouquet, renderFlowerPreview, stemCount } from './core/bouquet.js';
 import { syncPlacement, groupKeys } from './core/placement.js';
 import { bouquetMeaning } from './core/meaning.js';
 import { esc } from './core/util.js';
-import { templateById, cloneDesign } from './core/templates.js';
+import { templateById, cloneDesign, TEMPLATES as BOUQUETS } from './core/templates.js';
 import { encodeGift, giftUrl } from './share.js';
 import { downloadPng } from './export.js';
 
@@ -17,18 +17,10 @@ const HERO = { lily: 'pink', hydrangea: 'blue', daisy: 'white' };
 const $ = (s, r = document) => r.querySelector(s);
 const nm = (c, f) => (getLang() === 'zh' ? `${L(c.name)}${L(f.name)}` : `${L(c.name)} ${L(f.name)}`);
 
-const starter = () => ({
-  size: 'M', shape: 'round', wrap: 'kraft', ribbon: 'ivory', greenery: 2, seed: 20261013,
-  groups: [
-    { id: 1, type: 'rose', color: 'red', grade: 1, stage: 2, count: 9, dist: 'scatter', clusters: 2 },
-    { id: 2, type: 'peony', color: 'blush', grade: 1, stage: 2, count: 3, dist: 'cluster', clusters: 1 },
-    { id: 3, type: 'babysbreath', color: 'white', grade: 1, stage: 2, count: 4, dist: 'scatter', clusters: 2 },
-    { id: 4, type: 'eucalyptus', color: 'silver', grade: 1, stage: 2, count: 3, dist: 'scatter', clusters: 2 },
-  ],
-  place: {},
-  card: { to: '', from: '', msg: '' },
-  nextId: 5,
-});
+const starter = () => {
+  const d = cloneDesign(templateById('french-romance'));
+  return { ...d, card: { to: '', from: '', msg: '' }, nextId: d.groups.length + 1 };
+};
 
 function load() {
   let s = null;
@@ -262,7 +254,7 @@ function flowersTab() {
   const f = FLOWERS[picker.type];
   const cdef = colorOf(picker.type, picker.color);
   const cm = meaningOf(picker.type, picker.color);
-  const grid = TYPE_KEYS.map((k) => {
+  const grid = DISPLAY_KEYS.map((k) => {
     const def = FLOWERS[k];
     const hero = HERO[k] || def.colors[0].id;
     return `<button type="button" class="ftype ${k === picker.type ? 'on' : ''}" data-act="type" data-v="${k}">
@@ -277,7 +269,7 @@ function flowersTab() {
     return `<li class="mini"><span class="mini-art">${thumb(g, 'mn')}</span><span class="mini-name">${esc(nm(c, ff))}</span>${stepper(g)}</li>`;
   }).join('');
   return `
-    <a class="tpl-banner" href="library.html"><span class="tpl-banner-ico">✿</span><span><strong>${esc(t('browseTpl'))}</strong><small>${esc(t('browseTplSub'))}</small></span><span class="tpl-banner-go">→</span></a>
+    <a class="tpl-banner" href="library.html"><span class="tpl-banner-ico">✿</span><span><strong>${esc(t('browseTpl'))}</strong><small>${esc(t('browseTplSub', { n: BOUQUETS.length }))}</small></span><span class="tpl-banner-go">→</span></a>
     <h3 class="sec-title">${esc(t('chooseFlower'))}</h3>
     <div class="ftype-grid">${grid}</div>
     <div class="config">
@@ -298,7 +290,7 @@ function flowersTab() {
             <output>${picker.qty}</output>
             <button type="button" data-act="qty" data-v="1" aria-label="+">+</button>
           </div>
-          <button type="button" class="btn primary grow" data-act="add" ${used >= cap ? 'disabled' : ''}>${esc(t('addN', { n: Math.min(picker.qty, Math.max(0, cap - used)) || picker.qty }))}</button>
+          <button type="button" class="btn primary fill" data-act="add" ${used >= cap ? 'disabled' : ''}>${esc(t('addN', { n: Math.min(picker.qty, Math.max(0, cap - used)) || picker.qty }))}</button>
         </div>
       </div>
     </div>
