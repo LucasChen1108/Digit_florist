@@ -40,7 +40,7 @@ export async function downloadPng(svg, { card, filename = 'bouquet.png', width =
       ctx.font = `44px ${hand}`;
       lines = wrapLines(ctx, card.msg || '', cardW - 120).slice(0, 10);
     }
-    const cardH = lines.length || card?.to || card?.from ? 140 + lines.length * 66 + 70 : 0;
+    const cardH = lines.length || card?.to || card?.from ? 140 + lines.length * 66 + 70 + (card.meaning ? 60 : 0) : 0;
     canvas.width = width;
     canvas.height = bh + (cardH ? cardH + 40 : 0);
     ctx.fillStyle = '#f4ebe1';
@@ -66,6 +66,11 @@ export async function downloadPng(svg, { card, filename = 'bouquet.png', width =
         ctx.font = `italic 40px ${serif}`;
         const s = '— ' + card.from;
         ctx.fillText(s, pad + cardW - 60 - ctx.measureText(s).width, y + 10);
+      }
+      if (card.meaning) {
+        ctx.font = `30px ${serif}`;
+        ctx.fillStyle = '#a8324a';
+        ctx.fillText(card.meaning, pad + 60, y + 72);
       }
     }
     const blob = await new Promise((r) => canvas.toBlob(r, 'image/png'));

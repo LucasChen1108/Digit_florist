@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Bouquet Library · 花束模板库</title>
+  <meta name="description" content="Ready-made bouquet templates by occasion, style and flower language — open one and make it yours. 按用途、风格和花语挑选花束模板，再亲手修改。" />
+  <meta name="theme-color" content="#f6efe7" />
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Noto+Serif+SC:wght@500;600&display=swap" media="print" onload="this.media='all'" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body class="library-page">
+  <header class="topbar">
+    <a class="brand" href="./">
+      <img src="assets/favicon.svg" alt="" width="30" height="30" />
+      <span class="brand-name" data-i18n="brand">Digit Florist</span>
+    </a>
+    <nav class="nav">
+      <a class="nav-link" href="./" data-i18n="navStudio"></a>
+      <a class="nav-link on" href="library.html" data-i18n="navLibrary" aria-current="page"></a>
+    </nav>
+    <button class="lang-btn" id="langBtn" type="button" aria-label="Switch language"><span data-i18n="langLabel">中文</span></button>
+  </header>
+
+  <main class="library">
+    <section class="lib-hero">
+      <h1 data-i18n="libTitle"></h1>
+      <p data-i18n="libSub"></p>
+    </section>
+
+    <div class="lib-controls">
+      <div class="seg lib-mode" id="modeSeg" role="tablist"></div>
+      <div class="chips lib-chips" id="filterChips"></div>
+    </div>
+
+    <div id="lib"></div>
+  </main>
+
+  <footer class="foot" data-i18n="footer"></footer>
+
+  <dialog id="tplDlg" class="dlg wide">
+    <div class="dlg-inner tpl-detail">
+      <button class="dlg-x" type="button" data-close aria-label="Close">×</button>
+      <div class="tpl-detail-art"><img id="tdImg" alt="" /></div>
+      <div class="tpl-detail-body">
+        <div class="tpl-tags" id="tdTags"></div>
+        <h2 id="tdName"></h2>
+        <p class="muted" id="tdDesc"></p>
+        <div class="meaning-card"><span class="mc-label" data-i18n="bouquetMeaning"></span><p id="tdMeaning"></p><p class="mc-close" id="tdClose"></p></div>
+        <h3 class="sec-title small-title" data-i18n="inBouquet"></h3>
+        <ul class="mini-list" id="tdFlowers"></ul>
+        <p class="muted small" id="tdWrap"></p>
+        <div class="tpl-detail-actions">
+          <a class="btn primary" id="tdUse"><span data-i18n="useTpl"></span></a>
+          <a class="btn" id="tdSend"><span data-i18n="sendTpl"></span></a>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
+  <script type="module" src="js/library.js"></script>
+</body>
+</html>

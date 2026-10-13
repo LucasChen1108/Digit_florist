@@ -211,3 +211,82 @@ export const colorOf = (type, colorId) => {
   const f = FLOWERS[type];
   return f.colors.find((x) => x.id === colorId) || f.colors[0];
 };
+
+// Colour-specific flower language. cat = overall theme used for the bouquet reading:
+// love · thanks · joy · hope · bless
+const M = (en, zh, cat) => ({ en, zh, cat });
+export const COLOR_MEANINGS = {
+  rose: {
+    red: M('passionate love', '热烈的爱恋', 'love'),
+    burgundy: M('deep, devoted love', '深沉而成熟的爱', 'love'),
+    pink: M('gentle love and admiration', '温柔的爱与欣赏', 'love'),
+    blush: M('a shy, sweet crush', '羞涩的心动', 'love'),
+    white: M('purity and respect', '纯洁与尊敬', 'bless'),
+    champagne: M('“you are the only one for me”', '我只钟情你一人', 'love'),
+    yellow: M('friendship and joy', '友谊与真挚的快乐', 'joy'),
+    coral: M('enthusiasm and desire', '热情与渴望', 'love'),
+    lilac: M('enchantment, love at first sight', '浪漫与一见钟情', 'love'),
+    blue: M('a rare and precious love', '奇迹般珍贵的爱', 'love'),
+    black: M('one-of-a-kind devotion', '独一无二的真心', 'love'),
+  },
+  tulip: {
+    red: M('a declaration of love', '爱的宣言', 'love'),
+    pink: M('happiness and caring', '幸福与关怀', 'thanks'),
+    yellow: M('cheerful thoughts and sunshine', '开朗与阳光', 'joy'),
+    white: M('forgiveness and purity', '纯洁与谅解', 'bless'),
+    purple: M('royal, admiring love', '高贵的爱慕', 'love'),
+    orange: M('warmth and energy', '温暖与活力', 'joy'),
+  },
+  peony: {
+    blush: M('bashful romance', '羞涩的浪漫', 'love'),
+    coral: M('a life of abundance', '热情与圆满', 'bless'),
+    magenta: M('love that never fades', '情有独钟', 'love'),
+    white: M('a pure blessing', '纯洁的祝福', 'bless'),
+    burgundy: M('deep passion and prosperity', '浓情与富贵', 'love'),
+  },
+  sunflower: {
+    golden: M('loyalty and adoration', '忠诚与爱慕', 'joy'),
+    lemon: M('happiness and hope', '快乐与希望', 'hope'),
+    bronze: M('warm companionship', '温暖的陪伴', 'thanks'),
+  },
+  lily: {
+    white: M('purity and a lifetime together', '纯洁与百年好合', 'bless'),
+    pink: M('romance and good fortune', '浪漫与富贵', 'love'),
+    orange: M('confidence and pride', '自信与骄傲', 'joy'),
+    yellow: M('gratitude and joy', '感恩与快乐', 'thanks'),
+  },
+  carnation: {
+    red: M('deep admiration', '深深的敬爱', 'thanks'),
+    pink: M('a mother’s love', '母爱与感恩', 'thanks'),
+    white: M('pure love and remembrance', '纯真的思念', 'hope'),
+    peach: M('gentle gratitude', '温柔的感谢', 'thanks'),
+    purple: M('whimsy and sincerity', '独特而真挚', 'joy'),
+  },
+  daisy: {
+    white: M('innocence and purity', '天真与纯洁', 'bless'),
+    pink: M('love kept deep in the heart', '藏在心底的爱', 'love'),
+    yellow: M('joy and friendship', '快乐与友谊', 'joy'),
+  },
+  hydrangea: {
+    blue: M('calm and hope', '宁静与希望', 'hope'),
+    purple: M('lasting togetherness', '永恒与团聚', 'bless'),
+    pink: M('heartfelt romance', '浪漫与美满', 'love'),
+    white: M('grace and understanding', '宽容与理解', 'thanks'),
+    green: M('a fresh beginning', '新的开始', 'hope'),
+  },
+  lavender: {
+    purple: M('waiting for love', '等待爱情', 'love'),
+    white: M('serenity and protection', '宁静与守护', 'hope'),
+  },
+  eucalyptus: {
+    silver: M('protection and healing', '恩赐与守护', 'hope'),
+    sage: M('peace and renewal', '平和与新生', 'hope'),
+  },
+  babysbreath: {
+    white: M('pure, lasting longing', '纯洁的思念', 'love'),
+    pink: M('sweet companionship', '甜蜜的陪伴', 'love'),
+    blue: M('quiet devotion', '默默的守候', 'hope'),
+  },
+};
+
+export const meaningOf = (type, colorId) => COLOR_MEANINGS[type]?.[colorId] || { ...FLOWERS[type].meaning, cat: 'bless' };

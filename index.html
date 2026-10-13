@@ -19,15 +19,20 @@
       <span class="brand-name" data-i18n="brand">Digit Florist</span>
     </a>
     <p class="tagline" data-i18n="tagline"></p>
+    <nav class="nav">
+      <a class="nav-link on" href="./" data-i18n="navStudio" aria-current="page"></a>
+      <a class="nav-link" href="library.html" data-i18n="navLibrary"></a>
+    </nav>
     <button class="lang-btn" id="langBtn" type="button" aria-label="Switch language"><span data-i18n="langLabel">中文</span></button>
   </header>
 
   <main class="studio">
     <section class="stage-col" aria-label="Bouquet preview">
       <div class="stage" id="stage"></div>
+      <div class="selbar" id="selbar" hidden></div>
       <div class="stage-bar">
         <span class="pill" id="countPill"></span>
-        <span class="rose-note" id="roseNote"></span>
+        <button type="button" class="rose-note" id="roseNote"></button>
         <div class="stage-actions">
           <button class="icon-btn" data-act="shuffle" type="button" data-i18n-title="shuffle">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h3.5c2 0 3.2 1 4.5 3l1 1.6c1.3 2 2.5 3.4 4.5 3.4H20M4 17h3.5c1.6 0 2.6-.7 3.6-2M14 7h3.5H20m-2.5-2.5L20 7l-2.5 2.5m0 5L20 17l-2.5 2.5"/></svg>

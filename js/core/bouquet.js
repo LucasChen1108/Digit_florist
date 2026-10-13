@@ -1,7 +1,8 @@
 // Composes a full bouquet SVG: paper wrap, greenery, stems, flowers, ribbon.
 import { FLOWERS, GRADES, STAGES, SIZES, WRAPS, RIBBONS, colorOf } from './catalog.js';
 import { renderFlower, leaf } from './flowers.js';
-import { computeLayout, boundaryAt, pointsInShape } from './layout.js';
+import { boundaryAt, pointsInShape } from './layout.js';
+import { syncPlacement, expandStems, groupKeys } from './placement.js';
 import { Defs, F, rngFrom, tone, mix, radialGrad, linearGrad, hashStr } from './util.js';
 
 /* One defs registry + flower cache per SVG document prefix. */
@@ -22,27 +23,10 @@ function flowerFor(ctx, st) {
   return v;
 }
 
-/** Expand groups into individual stems with stable ids & seeds. */
-export function expandStems(design) {
-  const stems = [];
-  for (const g of design.groups) {
-    const def = FLOWERS[g.type];
-    if (!def) continue;
-    for (let k = 0; k < g.count; k++) {
-      const id = `${g.id}.${k}`;
-      stems.push({
-        id, gid: g.id, k, type: g.type, color: g.color, kind: def.kind,
-        grade: g.grade ?? 1, stage: def.stages ? g.stage ?? 2 : 2,
-        dist: g.dist || 'scatter', clusters: g.clusters || 2,
-        seed: hashStr(`${design.seed}|${id}`),
-      });
-    }
-  }
-  return stems;
-}
+export { expandStems };
 
 export function stemCount(design) {
-  return design.groups.reduce((a, g) => a + g.count, 0);
+  return design.groups.reduce((a, g) => a + groupKeys(g).length, 0);
 }
 
 /* ---------------- paper & ribbon ---------------- */
@@ -142,7 +126,7 @@ function paperFilter(defs) {
 
 /* ---------------- main ---------------- */
 export function renderBouquet(design, opts = {}) {
-  const { prefix = 'b', interactive = false, animate = false, background = true, width, height } = opts;
+  const { prefix = 'b', interactive = false, animate = false, background = true, width, height, selected = null } = opts;
   const ctx = ctxFor(prefix);
   const defs = ctx.defs;
   paperFilter(defs);
@@ -150,7 +134,7 @@ export function renderBouquet(design, opts = {}) {
   const D = size.D;
   const wrap = WRAPS[design.wrap] || WRAPS.kraft;
   const ribbon = RIBBONS[design.ribbon] || RIBBONS.ivory;
-  const stems = expandStems(design);
+  const stems = syncPlacement(design);
   const blooms = stems.filter((s) => s.kind === 'bloom');
 
   // global flower scale so the head looks full whatever the stem count
@@ -161,17 +145,12 @@ export function renderBouquet(design, opts = {}) {
   const De = D * Math.max(0.5, Math.min(1, Math.sqrt((sumA * gs * gs) / (0.86 * domeA))));
   const Rp = De * 0.82;
 
-  const layout = computeLayout(stems, { shape: design.shape, seed: design.seed });
-  const ov = design.overrides || {};
   const pos = new Map();
   for (const s of stems) {
-    const p = layout.get(s.id) || { x: 0, y: 0 };
-    let x = p.x * Rp, y = p.y * Rp, theta = p.theta;
-    if (ov[s.id]) {
-      [x, y] = ov[s.id];
-      if (s.kind === 'sprig') theta = Math.atan2(x, -y);
-    }
-    pos.set(s.id, { x, y, theta });
+    const p = design.place[s.id] || { x: 0, y: 0 };
+    let theta = p.th;
+    if (s.kind === 'sprig' && theta === undefined) theta = Math.atan2(p.x, -p.y);
+    pos.set(s.id, { x: p.x * Rp, y: p.y * Rp, theta, f: p.f });
   }
 
   const neckY = D * 1.36;
@@ -229,28 +208,42 @@ export function renderBouquet(design, opts = {}) {
     const fl = flowerFor(ctx, s);
     const r2 = rngFrom(s.seed, 't');
     let inner, z;
+    const f = p.f;
+    let ring = 0, face = null; // face = [angleFromUpDeg, amount]
     if (s.kind === 'sprig') {
-      const deg = (p.theta * 180) / Math.PI + (r2() - 0.5) * 10;
-      inner = `rotate(${F(deg)}) scale(${F(sprigScale * GRADES[s.grade].f)})`;
+      const jit = (r2() - 0.5) * 10;
+      const deg = f ? f[0] : (p.theta * 180) / Math.PI + jit;
+      const sc = sprigScale * GRADES[s.grade].f;
+      inner = `rotate(${F(deg)}) scale(${F(sc)})`;
       z = -2000 + p.y;
+      ring = 34 * sc; face = [deg, 1];
     } else if (s.kind === 'filler') {
       const sc = (0.95 * 50 * gs) / fl.r * (0.9 + r2() * 0.2);
       inner = `rotate(${F(r2() * 360)}) scale(${F(sc)})`;
       z = -1000 + p.y;
+      ring = fl.r * sc;
     } else {
       const rr = Math.min(1.2, Math.hypot(p.x, p.y) / De);
       const persp = 1 + 0.08 * (p.y / De);
       const want = nominal(s) * gs * persp * (0.94 + r2() * 0.12);
       const sc = want / fl.r;
+      const spin = r2() * 360, jit = (r2() - 0.5) * 14;
+      ring = want * 1.12;
       if (FLOWERS[s.type].upright) {
-        inner = `rotate(${F((p.x / De) * 30 + (r2() - 0.5) * 14)}) scale(${F(sc)})`;
+        let lean = (p.x / De) * 30 + jit;
+        if (f) { const a = ((f[0] + 540) % 360) - 180; lean = f[1] < 0.12 ? 0 : Math.max(-80, Math.min(80, a)); }
+        inner = `rotate(${F(lean)}) scale(${F(sc)})`;
+        face = [lean, f ? f[1] : Math.min(1, Math.abs(lean) / 45)];
       } else {
-        const phi = (Math.atan2(p.y, p.x) * 180) / Math.PI;
-        const comp = 1 - 0.22 * Math.min(1, rr) ** 1.6;
-        inner = `rotate(${F(phi)}) scale(${F(comp)} 1) rotate(${F(-phi + r2() * 360)}) scale(${F(sc)})`;
+        const auto = [(Math.atan2(p.x, -p.y) * 180) / Math.PI, (0.22 * Math.min(1, rr) ** 1.6) / 0.45];
+        face = f || auto;
+        const phi = face[0] - 90;
+        const comp = 1 - 0.45 * Math.min(1, face[1]);
+        inner = `rotate(${F(phi)}) scale(${F(comp)} 1) rotate(${F(-phi + spin)}) scale(${F(sc)})`;
       }
       z = p.y;
     }
+    p.ring = ring; p.face = face;
     items.push({ s, p, fl, inner, z, i: idx++ });
   }
   items.sort((a, b) => a.z - b.z);
@@ -272,10 +265,25 @@ export function renderBouquet(design, opts = {}) {
   /* front paper, stem tails, ribbon */
   const front = `<g${A('fade', 0.25)}>${frontWrap(defs, D, wrap, neckY)}${stemTails(D, neckY, Math.min(13, 5 + Math.round(stems.length / 6)), rng)}${ribbonBow(defs, D, ribbon, neckY)}</g>`;
 
-  const body = `${bg}${back}<g${A('fade', 0.3)}>${stemsSvg}</g><g${A('fade', 0.35)}>${green}</g><g class="head">${head}</g>${front}`;
+  let sel = '';
+  const sp = selected && pos.get(selected);
+  if (sp) {
+    const R = sp.ring, k = D * 0.045;
+    sel = `<g class="sel-ui" transform="translate(${F(sp.x)} ${F(sp.y)})"><circle r="${F(R)}" fill="none" stroke="#2d2226" stroke-opacity=".35" stroke-width="${F(k * 0.5)}"/><circle r="${F(R)}" fill="none" stroke="#fff" stroke-width="${F(k * 0.22)}" stroke-dasharray="${F(k * 0.6)} ${F(k * 0.5)}"/>`;
+    if (sp.face) {
+      const a = (sp.face[0] * Math.PI) / 180, m = Math.max(0.18, Math.min(1, sp.face[1]));
+      const kx = Math.sin(a) * R * m, ky = -Math.cos(a) * R * m;
+      sel += `<line x2="${F(kx)}" y2="${F(ky)}" stroke="#fff" stroke-width="${F(k * 0.28)}" stroke-linecap="round"/><circle r="${F(k * 0.25)}" fill="#fff"/>` +
+        `<circle cx="${F(kx)}" cy="${F(ky)}" r="${F(k * 1.6)}" fill="transparent" data-knob="${selected}" class="knob-hit"/>` +
+        `<circle cx="${F(kx)}" cy="${F(ky)}" r="${F(k)}" fill="#a8324a" stroke="#fff" stroke-width="${F(k * 0.3)}" pointer-events="none"/>`;
+    }
+    sel += '</g>';
+  }
+
+  const body = `${bg}${back}<g${A('fade', 0.3)}>${stemsSvg}</g><g${A('fade', 0.35)}>${green}</g><g class="head">${head}</g>${front}${sel}`;
   const wh = width ? ` width="${width}" height="${height ?? Math.round((width * vb[3]) / vb[2])}"` : '';
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${vb.map(F).join(' ')}"${wh} role="img"><defs>${defs.markup()}</defs>${body}</svg>`;
-  return { svg, pos, D, De, stems, viewBox: vb };
+  return { svg, pos, D, De, Rp, stems, viewBox: vb };
 }
 
 /** A single flower on a transparent square, for pickers and lists. */

@@ -1,16 +1,21 @@
 import { t, L, getLang, setLang, onLang, applyI18n } from './i18n.js';
 import {
   FLOWERS, TYPE_KEYS, GRADES, STAGES, DISTS, distsFor, SIZES, SIZE_KEYS, SHAPES, SHAPE_KEYS,
-  GREENERY, WRAPS, WRAP_KEYS, RIBBONS, RIBBON_KEYS, ROSE_COUNTS, TEMPLATES, colorOf,
+  GREENERY, WRAPS, WRAP_KEYS, RIBBONS, RIBBON_KEYS, TEMPLATES, colorOf, meaningOf,
 } from './core/catalog.js';
 import { renderBouquet, renderFlowerPreview, stemCount } from './core/bouquet.js';
+import { syncPlacement, groupKeys } from './core/placement.js';
+import { bouquetMeaning } from './core/meaning.js';
 import { esc } from './core/util.js';
+import { templateById, cloneDesign } from './core/templates.js';
 import { encodeGift, giftUrl } from './share.js';
 import { downloadPng } from './export.js';
 
-const STORE = 'digit-florist-draft-v1';
+const STORE = 'digit-florist-draft-v2';
+const OLD_STORE = 'digit-florist-draft-v1';
 const HERO = { lily: 'pink', hydrangea: 'blue', daisy: 'white' };
 const $ = (s, r = document) => r.querySelector(s);
+const nm = (c, f) => (getLang() === 'zh' ? `${L(c.name)}${L(f.name)}` : `${L(c.name)} ${L(f.name)}`);
 
 const starter = () => ({
   size: 'M', shape: 'round', wrap: 'kraft', ribbon: 'ivory', greenery: 2, seed: 20261013,
@@ -20,26 +25,50 @@ const starter = () => ({
     { id: 3, type: 'babysbreath', color: 'white', grade: 1, stage: 2, count: 4, dist: 'scatter', clusters: 2 },
     { id: 4, type: 'eucalyptus', color: 'silver', grade: 1, stage: 2, count: 3, dist: 'scatter', clusters: 2 },
   ],
-  overrides: {},
+  place: {},
   card: { to: '', from: '', msg: '' },
   nextId: 5,
 });
 
 function load() {
+  let s = null;
   try {
-    const raw = localStorage.getItem(STORE);
-    if (raw) {
-      const s = JSON.parse(raw);
-      if (s && Array.isArray(s.groups)) return { ...starter(), ...s };
-    }
+    const raw = localStorage.getItem(STORE) || localStorage.getItem(OLD_STORE);
+    if (raw) s = JSON.parse(raw);
   } catch {}
-  return starter();
+  const st = s && Array.isArray(s.groups) ? { ...starter(), ...s } : starter();
+  delete st.overrides;
+  if (!st.place || typeof st.place !== 'object') st.place = {};
+  st.groups.forEach(groupKeys);
+  syncPlacement(st);
+  return st;
 }
 
 let state = load();
 let tab = 'flowers';
+let pendingToast = '';
+
+/* open a template from the library: ./?t=<id>[&tab=card] */
+(() => {
+  let u;
+  try { u = new URL(location.href); } catch { return; }
+  const tp = templateById(u.searchParams.get('t') || '');
+  if (tp) {
+    const d = cloneDesign(tp);
+    const card = { ...state.card };
+    if (!card.msg || state.fromTpl) card.msg = tp.msg[getLang()] || tp.msg.en;
+    state = { ...state, ...d, card, nextId: d.groups.length + 1, fromTpl: tp.id };
+    state.groups.forEach(groupKeys);
+    syncPlacement(state);
+    try { localStorage.setItem(STORE, JSON.stringify(state)); } catch {}
+    pendingToast = t('tplLoaded', { name: L(tp.name) });
+  }
+  if (['flowers', 'arrange', 'wrap', 'card'].includes(u.searchParams.get('tab'))) tab = u.searchParams.get('tab');
+  if (u.search) history.replaceState(null, '', u.pathname + u.hash);
+})();
 const picker = { type: 'rose', color: 'red', grade: 1, stage: 2, qty: 3 };
 let last = null; // last render result
+let selected = null; // selected stem id
 
 function save() {
   try { localStorage.setItem(STORE, JSON.stringify(state)); } catch {}
@@ -55,6 +84,31 @@ function toast(msg) {
   toastTimer = setTimeout(() => el.classList.remove('show'), 2400);
 }
 
+/* ---------------- stems helpers ---------------- */
+const parseId = (id) => { const [g, k] = id.split('.'); return { gid: +g, k: +k }; };
+const groupOf = (id) => state.groups.find((g) => g.id === parseId(id).gid);
+const hasManual = () => Object.values(state.place).some((p) => p.m);
+
+function addStems(g, n) {
+  groupKeys(g);
+  for (let i = 0; i < n; i++) g.keys.push(g.nextK++);
+  g.count = g.keys.length;
+}
+function removeStem(id) {
+  const g = groupOf(id);
+  if (!g) return;
+  const { k } = parseId(id);
+  g.keys = groupKeys(g).filter((x) => x !== k);
+  g.count = g.keys.length;
+  if (!g.count) state.groups = state.groups.filter((x) => x !== g);
+  delete state.place[id];
+  if (selected === id) selected = null;
+}
+function removeLast(g) {
+  const keys = groupKeys(g);
+  if (keys.length) removeStem(`${g.id}.${keys[keys.length - 1]}`);
+}
+
 /* ---------------- stage ---------------- */
 let raf = 0;
 function scheduleStage() {
@@ -63,19 +117,56 @@ function scheduleStage() {
 }
 
 function renderStage() {
-  last = renderBouquet(state, { prefix: 'st', interactive: true, background: false });
+  if (selected && !state.place[selected]) selected = null;
+  last = renderBouquet(state, { prefix: 'st', interactive: true, background: false, selected });
   $('#stage').innerHTML = last.svg;
   const n = stemCount(state), cap = SIZES[state.size].cap;
   const pill = $('#countPill');
   pill.textContent = t('stems', { n, cap });
   pill.classList.toggle('warn', n >= cap);
-  const roses = state.groups.filter((g) => g.type === 'rose').reduce((a, g) => a + g.count, 0);
-  $('#roseNote').textContent = ROSE_COUNTS[roses] ? t('roseMeaning', { n: roses, m: L(ROSE_COUNTS[roses]) }) : '';
+  const mean = bouquetMeaning(state, getLang());
+  const note = $('#roseNote');
+  note.textContent = mean ? '✿ ' + mean.closing : '';
+  note.title = mean ? mean.text : '';
   $('#stage').classList.toggle('empty', n === 0);
   if (n === 0) $('#stage').insertAdjacentHTML('beforeend', `<p class="empty-msg">${esc(t('empty'))}</p>`);
+  renderSelbar();
 }
 
-/* drag flowers directly on the bouquet */
+function renderSelbar() {
+  const bar = $('#selbar');
+  if (!selected || !last?.pos.get(selected)) { bar.hidden = true; return; }
+  const g = groupOf(selected);
+  const f = FLOWERS[g.type], c = colorOf(g.type, g.color);
+  const p = state.place[selected];
+  const canFace = f.kind !== 'filler';
+  bar.innerHTML = `
+    <div class="selbar-head"><strong>${esc(nm(c, f))}</strong>
+      <button type="button" class="x-btn" data-act="desel" aria-label="${esc(t('close'))}">×</button></div>
+    ${canFace ? `<p class="selbar-hint">${esc(t(f.kind === 'sprig' ? 'faceHintSprig' : 'faceHint'))}</p>` : ''}
+    <div class="selbar-actions">
+      ${canFace && f.kind === 'bloom' ? `<button type="button" class="chip" data-act="facefront">${esc(t('faceFront'))}</button>` : ''}
+      ${p?.m ? `<button type="button" class="chip" data-act="faceauto">${esc(t('faceAuto'))}</button>` : ''}
+      <button type="button" class="chip danger" data-act="delstem">${esc(t('deleteStem'))}</button>
+    </div>`;
+  bar.hidden = false;
+  // place the bar next to the selected flower
+  const ring = $('#stage .sel-ui circle');
+  const col = $('.stage-col').getBoundingClientRect();
+  const stg = $('#stage').getBoundingClientRect();
+  if (!ring) return;
+  const r = ring.getBoundingClientRect();
+  const bw = bar.offsetWidth, bh = bar.offsetHeight;
+  let x = r.right + 12 - col.left;
+  if (x + bw > stg.right - col.left - 8) x = r.left - 12 - bw - col.left;
+  x = Math.max(stg.left - col.left + 8, Math.min(x, stg.right - col.left - bw - 8));
+  let y = r.top + r.height / 2 - bh / 2 - col.top;
+  y = Math.max(stg.top - col.top + 8, Math.min(y, stg.bottom - col.top - bh - 8));
+  bar.style.left = x + 'px';
+  bar.style.top = y + 'px';
+}
+
+/* move & orient flowers directly on the bouquet */
 let drag = null;
 function svgPoint(e) {
   const svg = $('#stage svg');
@@ -86,13 +177,24 @@ function svgPoint(e) {
 function initDrag() {
   const stage = $('#stage');
   stage.addEventListener('pointerdown', (e) => {
+    if (!last || e.button > 0) return;
+    const knob = e.target.closest('[data-knob]');
     const el = e.target.closest('[data-stem]');
-    if (!el || !last) return;
-    const id = el.dataset.stem;
-    const p = last.pos.get(id);
-    if (!p) return;
     const s = svgPoint(e);
-    drag = { id, ox: p.x - s.x, oy: p.y - s.y, moved: false };
+    if (knob) {
+      drag = { mode: 'face', id: knob.dataset.knob, moved: false };
+    } else if (el) {
+      const id = el.dataset.stem;
+      const p = last.pos.get(id);
+      if (!p) return;
+      const changed = selected !== id;
+      selected = id;
+      drag = { mode: 'move', id, ox: p.x - s.x, oy: p.y - s.y, sx: e.clientX, sy: e.clientY, moved: false };
+      if (changed) renderStage();
+    } else {
+      if (selected) { selected = null; renderStage(); }
+      return;
+    }
     stage.setPointerCapture(e.pointerId);
     stage.classList.add('dragging');
     e.preventDefault();
@@ -100,10 +202,23 @@ function initDrag() {
   stage.addEventListener('pointermove', (e) => {
     if (!drag) return;
     const s = svgPoint(e);
-    const D = last.D;
-    const x = Math.max(-1.25 * D, Math.min(1.25 * D, s.x + drag.ox));
-    const y = Math.max(-1.2 * D, Math.min(1.0 * D, s.y + drag.oy));
-    state.overrides[drag.id] = [x, y];
+    const D = last.D, Rp = last.Rp;
+    const p = state.place[drag.id];
+    if (!p) return;
+    if (drag.mode === 'move') {
+      if (!drag.moved && Math.hypot(e.clientX - drag.sx, e.clientY - drag.sy) < 4) return;
+      const x = Math.max(-1.25 * D, Math.min(1.25 * D, s.x + drag.ox));
+      const y = Math.max(-1.2 * D, Math.min(1.0 * D, s.y + drag.oy));
+      p.x = x / Rp; p.y = y / Rp; p.m = 1;
+      if (FLOWERS[groupOf(drag.id).type].kind === 'sprig' && !p.f) p.th = Math.atan2(x, -y);
+    } else {
+      const c = last.pos.get(drag.id);
+      const dx = s.x - c.x, dy = s.y - c.y;
+      const ang = (Math.atan2(dx, -dy) * 180) / Math.PI;
+      const amt = Math.min(1, Math.hypot(dx, dy) / Math.max(1, c.ring));
+      p.f = [ang, amt < 0.14 ? 0 : amt];
+      p.m = 1;
+    }
     drag.moved = true;
     scheduleStage();
   });
@@ -115,6 +230,12 @@ function initDrag() {
   };
   stage.addEventListener('pointerup', end);
   stage.addEventListener('pointercancel', end);
+  window.addEventListener('resize', () => renderSelbar());
+  document.addEventListener('keydown', (e) => {
+    if (!selected || /input|textarea/i.test(document.activeElement?.tagName || '')) return;
+    if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); ACTIONS.delstem(); }
+    else if (e.key === 'Escape') { selected = null; renderStage(); }
+  });
 }
 
 /* ---------------- panel ---------------- */
@@ -122,9 +243,25 @@ const seg = (act, options, current, extra = '') =>
   `<div class="seg" role="radiogroup">${options.map(([v, label]) =>
     `<button type="button" role="radio" aria-checked="${v === current}" class="${v === current ? 'on' : ''}" data-act="${act}" data-v="${v}" ${extra}>${esc(label)}</button>`).join('')}</div>`;
 
+const stepper = (g) => `<div class="stepper sm">
+    <button type="button" data-act="gqty" data-gid="${g.id}" data-v="-1" aria-label="−">−</button>
+    <output>${g.count}</output>
+    <button type="button" data-act="gqty" data-gid="${g.id}" data-v="1" aria-label="+">+</button>
+  </div>
+  <button type="button" class="x-btn" data-act="gdel" data-gid="${g.id}" title="${esc(t('remove'))}" aria-label="${esc(t('remove'))}">×</button>`;
+
+const thumb = (g, pfx) => renderFlowerPreview(g.type, g.color, g.grade, g.stage, pfx + g.type + g.color + g.grade + g.stage);
+
+function meaningCard() {
+  const m = bouquetMeaning(state, getLang());
+  if (!m) return '';
+  return `<div class="meaning-card"><span class="mc-label">${esc(t('bouquetMeaning'))}</span><p>${esc(m.text)}</p><p class="mc-close">${esc(m.closing)}</p></div>`;
+}
+
 function flowersTab() {
   const f = FLOWERS[picker.type];
   const cdef = colorOf(picker.type, picker.color);
+  const cm = meaningOf(picker.type, picker.color);
   const grid = TYPE_KEYS.map((k) => {
     const def = FLOWERS[k];
     const hero = HERO[k] || def.colors[0].id;
@@ -135,15 +272,20 @@ function flowersTab() {
   const colors = f.colors.map((c) =>
     `<button type="button" class="swatch ${c.id === picker.color ? 'on' : ''}" style="--c:${c.hex}" data-act="color" data-v="${c.id}" title="${esc(L(c.name))}" aria-label="${esc(L(c.name))}"></button>`).join('');
   const cap = SIZES[state.size].cap, used = stemCount(state);
+  const mini = state.groups.map((g) => {
+    const ff = FLOWERS[g.type], c = colorOf(g.type, g.color);
+    return `<li class="mini"><span class="mini-art">${thumb(g, 'mn')}</span><span class="mini-name">${esc(nm(c, ff))}</span>${stepper(g)}</li>`;
+  }).join('');
   return `
-    <h3 class="sec-title" data-i18n="chooseFlower">${esc(t('chooseFlower'))}</h3>
+    <a class="tpl-banner" href="library.html"><span class="tpl-banner-ico">✿</span><span><strong>${esc(t('browseTpl'))}</strong><small>${esc(t('browseTplSub'))}</small></span><span class="tpl-banner-go">→</span></a>
+    <h3 class="sec-title">${esc(t('chooseFlower'))}</h3>
     <div class="ftype-grid">${grid}</div>
     <div class="config">
-      <div class="config-art" id="pickArt">${renderFlowerPreview(picker.type, picker.color, picker.grade, picker.stage, 'pk' + picker.type + picker.color + picker.grade + picker.stage)}</div>
+      <div class="config-art">${renderFlowerPreview(picker.type, picker.color, picker.grade, picker.stage, 'pk' + picker.type + picker.color + picker.grade + picker.stage)}</div>
       <div class="config-body">
         <div class="config-head">
-          <h4>${esc(L(cdef.name))} ${esc(L(f.name))}</h4>
-          <p class="meaning"><span>${esc(t('meaning'))}</span>${esc(L(f.meaning))}</p>
+          <h4>${esc(nm(cdef, f))}</h4>
+          <p class="meaning"><span>${esc(t('meaning'))}</span>${esc(L(cm))}</p>
         </div>
         <label class="field-label">${esc(t('color'))} · <em>${esc(L(cdef.name))}</em></label>
         <div class="swatches">${colors}</div>
@@ -159,7 +301,9 @@ function flowersTab() {
           <button type="button" class="btn primary grow" data-act="add" ${used >= cap ? 'disabled' : ''}>${esc(t('addN', { n: Math.min(picker.qty, Math.max(0, cap - used)) || picker.qty }))}</button>
         </div>
       </div>
-    </div>`;
+    </div>
+    ${state.groups.length ? `<div class="sec-row"><h3 class="sec-title">${esc(t('inBouquet'))}</h3><button type="button" class="link-btn" data-act="clear">${esc(t('clearAll'))}</button></div>
+    <ul class="mini-list">${mini}</ul><p class="muted small">${esc(t('selectHint'))}</p>` : ''}`;
 }
 
 function arrangeTab() {
@@ -175,34 +319,29 @@ function arrangeTab() {
     const sub = [L(GRADES[g.grade].name), f.stages ? L(STAGES[g.stage].name) : null].filter(Boolean).join(' · ');
     const dists = distsFor(f.kind).map((d) => [d, L(DISTS[d])]);
     return `<li class="grp">
-      <span class="grp-art">${renderFlowerPreview(g.type, g.color, g.grade, g.stage, 'gl' + g.type + g.color + g.grade + g.stage)}</span>
+      <span class="grp-art">${thumb(g, 'gl')}</span>
       <div class="grp-main">
         <div class="grp-top">
-          <div><strong>${esc(L(c.name))} ${esc(L(f.name))}</strong><small>${esc(sub)}</small></div>
-          <div class="stepper sm">
-            <button type="button" data-act="gqty" data-gid="${g.id}" data-v="-1" aria-label="−">−</button>
-            <output>${g.count}</output>
-            <button type="button" data-act="gqty" data-gid="${g.id}" data-v="1" aria-label="+">+</button>
-          </div>
-          <button type="button" class="x-btn" data-act="gdel" data-gid="${g.id}" title="${esc(t('remove'))}" aria-label="${esc(t('remove'))}">×</button>
+          <div><strong>${esc(nm(c, f))}</strong><small>${esc(sub)}</small></div>
+          ${stepper(g)}
         </div>
         <div class="grp-dist">${seg('gdist', dists, g.dist, `data-gid="${g.id}"`)}
         ${g.dist === 'cluster' ? `<div class="cl"><span>${esc(t('clusters'))}</span>${seg('gcl', [[1, '1'], [2, '2'], [3, '3']], g.clusters || 2, `data-gid="${g.id}"`)}</div>` : ''}</div>
       </div></li>`;
   }).join('');
-  const hasOv = Object.keys(state.overrides || {}).length > 0;
   return `
+    ${meaningCard()}
     <h3 class="sec-title">${esc(t('shape'))}</h3>
     <div class="chips">${shapes}</div>
     <h3 class="sec-title">${esc(t('greenery'))}</h3>
     ${seg('greenery', GREENERY.map((g, i) => [i, L(g)]), state.greenery)}
     <div class="sec-row"><h3 class="sec-title">${esc(t('inBouquet'))}</h3>
       <div class="row-actions">
-        ${hasOv ? `<button type="button" class="link-btn" data-act="resetpos">${esc(t('resetPos'))}</button>` : ''}
+        ${hasManual() ? `<button type="button" class="link-btn" data-act="resetpos">${esc(t('resetPos'))}</button>` : ''}
         ${state.groups.length ? `<button type="button" class="link-btn" data-act="clear">${esc(t('clearAll'))}</button>` : ''}
       </div></div>
     ${state.groups.length ? `<ul class="grp-list">${groups}</ul>` : `<p class="muted empty-note">${esc(t('empty'))}</p>`}
-    <p class="muted small">${esc(t('dragHint'))}</p>`;
+    <p class="muted small">${esc(t('selectHint'))}</p>`;
 }
 
 function wrapTab() {
@@ -241,6 +380,7 @@ function cardTab() {
     </div>
     <p class="field-label">${esc(t('templates'))}</p>
     <div class="chips">${tmpls}</div>
+    ${meaningCard()}
     <button type="button" class="btn primary big" data-act="send">${esc(t('send'))}
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h14m-5-5 5 5-5 5"/></svg></button>`;
 }
@@ -260,9 +400,15 @@ function renderPanel() {
 }
 
 function update({ panel = true, stage = true } = {}) {
+  syncPlacement(state);
   save();
   if (stage) renderStage();
   if (panel) renderPanel();
+}
+
+/** Re-arrange automatically placed stems (hand-placed ones stay put). */
+function relayout() {
+  syncPlacement(state, { full: true });
 }
 
 /* ---------------- actions ---------------- */
@@ -273,54 +419,75 @@ function addFlowers() {
   const n = Math.min(picker.qty, room);
   const f = FLOWERS[picker.type];
   const stage = f.stages ? picker.stage : 2;
-  const same = state.groups.find((g) => g.type === picker.type && g.color === picker.color && g.grade === picker.grade && g.stage === stage);
-  if (same) same.count += n;
-  else state.groups.push({ id: state.nextId++, type: picker.type, color: picker.color, grade: picker.grade, stage, count: n, dist: f.kind === 'sprig' ? 'scatter' : 'scatter', clusters: 2 });
-  toast(t('added', { name: L(colorOf(picker.type, picker.color).name) + ' ' + L(f.name), n }) + (n < picker.qty ? ' · ' + t('full') : ''));
-  update();
+  let g = state.groups.find((x) => x.type === picker.type && x.color === picker.color && x.grade === picker.grade && x.stage === stage);
+  if (!g) {
+    g = { id: state.nextId++, type: picker.type, color: picker.color, grade: picker.grade, stage, keys: [], nextK: 0, count: 0, dist: 'scatter', clusters: 2 };
+    state.groups.push(g);
+  }
+  addStems(g, n);
+  toast(t('added', { name: nm(colorOf(picker.type, picker.color), f), n }) + (n < picker.qty ? ' · ' + t('full') : ''));
+  update(); // new stems are fitted into gaps; existing flowers stay where they are
 }
 
+const findG = (el) => state.groups.find((x) => x.id === +el.dataset.gid);
+
 const ACTIONS = {
-  type: (v) => { picker.type = v; picker.color = FLOWERS[v].colors[0].id; update({ stage: false }); },
+  type: (v) => { picker.type = v; picker.color = (HERO[v] && FLOWERS[v].colors.some((c) => c.id === HERO[v])) ? HERO[v] : FLOWERS[v].colors[0].id; update({ stage: false }); },
   color: (v) => { picker.color = v; update({ stage: false }); },
   grade: (v) => { picker.grade = +v; update({ stage: false }); },
   stage: (v) => { picker.stage = +v; update({ stage: false }); },
   qty: (v) => { picker.qty = Math.max(1, Math.min(99, picker.qty + +v)); update({ stage: false }); },
   add: () => addFlowers(),
-  shape: (v) => { state.shape = v; state.overrides = {}; update(); },
+  shape: (v) => { state.shape = v; state.place = {}; selected = null; update(); },
   greenery: (v) => { state.greenery = +v; update(); },
   size: (v) => {
-    const used = stemCount(state);
-    if (used > SIZES[v].cap) { toast(t('full')); return; }
-    state.size = v; state.overrides = {}; update();
+    if (stemCount(state) > SIZES[v].cap) { toast(t('full')); return; }
+    state.size = v; update();
   },
   wrap: (v) => { state.wrap = v; update(); },
   ribbon: (v) => { state.ribbon = v; update(); },
   gqty: (v, el) => {
-    const g = state.groups.find((x) => x.id === +el.dataset.gid);
+    const g = findG(el);
     if (!g) return;
-    if (+v > 0 && stemCount(state) >= SIZES[state.size].cap) { toast(t('full')); return; }
-    g.count += +v;
-    if (g.count <= 0) state.groups = state.groups.filter((x) => x !== g);
+    if (+v > 0) {
+      if (stemCount(state) >= SIZES[state.size].cap) { toast(t('full')); return; }
+      addStems(g, 1);
+    } else removeLast(g);
     update();
   },
-  gdel: (_, el) => { state.groups = state.groups.filter((x) => x.id !== +el.dataset.gid); update(); },
-  gdist: (v, el) => { const g = state.groups.find((x) => x.id === +el.dataset.gid); if (g) { g.dist = v; clearGroupOverrides(g.id); update(); } },
-  gcl: (v, el) => { const g = state.groups.find((x) => x.id === +el.dataset.gid); if (g) { g.clusters = +v; clearGroupOverrides(g.id); update(); } },
-  shuffle: () => { state.seed = Math.floor(Math.random() * 1e9); state.overrides = {}; update({ panel: tab === 'arrange' }); },
-  resetpos: () => { state.overrides = {}; update(); },
-  clear: () => { state.groups = []; state.overrides = {}; update(); },
+  gdel: (_, el) => {
+    const g = findG(el);
+    if (!g) return;
+    for (const k of groupKeys(g)) delete state.place[`${g.id}.${k}`];
+    state.groups = state.groups.filter((x) => x !== g);
+    update();
+  },
+  gdist: (v, el) => { const g = findG(el); if (g) { g.dist = v; relayout(); update(); } },
+  gcl: (v, el) => { const g = findG(el); if (g) { g.clusters = +v; relayout(); update(); } },
+  shuffle: () => { state.seed = Math.floor(Math.random() * 1e9); state.place = {}; selected = null; update({ panel: tab === 'arrange' }); },
+  resetpos: () => {
+    for (const p of Object.values(state.place)) { delete p.m; delete p.f; }
+    relayout(); update();
+  },
+  clear: () => { state.groups = []; state.place = {}; selected = null; update(); },
   tmpl: (v) => { state.card.msg = TEMPLATES[+v][getLang()]; save(); const m = $('#cMsg'); if (m) m.value = state.card.msg; },
   send: () => openShare(),
+  desel: () => { selected = null; renderStage(); },
+  delstem: () => { if (!selected) return; removeStem(selected); update(); },
+  facefront: () => { const p = state.place[selected]; if (p) { p.f = [p.f?.[0] ?? 0, 0]; p.m = 1; update({ panel: tab === 'arrange' }); } },
+  faceauto: () => {
+    const p = state.place[selected];
+    if (!p) return;
+    delete p.f;
+    if (FLOWERS[groupOf(selected).type].kind === 'sprig') p.th = Math.atan2(p.x, -p.y);
+    update({ panel: tab === 'arrange' });
+  },
 };
-
-function clearGroupOverrides(gid) {
-  for (const k of Object.keys(state.overrides)) if (k.startsWith(gid + '.')) delete state.overrides[k];
-}
 
 document.addEventListener('click', (e) => {
   const tb = e.target.closest('.tabs [data-tab]');
   if (tb) { tab = tb.dataset.tab; renderPanel(); return; }
+  if (e.target.closest('#roseNote')) { tab = 'arrange'; renderPanel(); return; }
   const el = e.target.closest('[data-act]');
   if (el && ACTIONS[el.dataset.act]) ACTIONS[el.dataset.act](el.dataset.v, el);
 });
@@ -355,7 +522,8 @@ $('#shareDlg').addEventListener('click', async (e) => {
     toast(t('saving'));
     const { svg } = renderBouquet(state, { prefix: 'ex', width: 1400 });
     const c = state.card;
-    await downloadPng(svg, { card: { to: c.to ? t('dear', { name: c.to }) : '', msg: c.msg, from: c.from } });
+    const m = bouquetMeaning(state, getLang());
+    await downloadPng(svg, { card: { to: c.to ? t('dear', { name: c.to }) : '', msg: c.msg, from: c.from, meaning: m ? `${t('bouquetMeaning')} · ${m.closing}` : '' } });
   }
 });
 
@@ -366,3 +534,4 @@ applyI18n();
 initDrag();
 renderStage();
 renderPanel();
+if (pendingToast) toast(pendingToast);

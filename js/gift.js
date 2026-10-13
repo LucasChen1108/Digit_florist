@@ -2,6 +2,7 @@ import { t, getLang, setLang, onLang, applyI18n, hasSavedLang } from './i18n.js'
 import { renderBouquet } from './core/bouquet.js';
 import { colorOf, FLOWERS } from './core/catalog.js';
 import { decodeGift } from './share.js';
+import { bouquetMeaning } from './core/meaning.js';
 import { downloadPng } from './export.js';
 import { petalPath, shades } from './core/util.js';
 
@@ -23,7 +24,12 @@ function fillText() {
   $('#noteTo').textContent = card.to ? t('dear', { name: card.to }) : t('hello');
   $('#noteMsg').textContent = card.msg || '';
   $('#noteFrom').textContent = card.from ? '— ' + card.from : '';
-  $('#note').hidden = !card.msg && !card.to && !card.from;
+  const m = bouquetMeaning(gift.design, getLang());
+  $('#noteMeaning').innerHTML = '';
+  if (m) {
+    const b = document.createElement('b'); b.textContent = t('bouquetMeaning');
+    $('#noteMeaning').append(b, document.createTextNode(m.text + ' ' + m.closing));
+  }
   document.title = `${t('giftFor')} · ${t('brand')}`;
 }
 
