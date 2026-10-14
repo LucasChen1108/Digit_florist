@@ -95,12 +95,15 @@ export function recolorFilter(defs, hex) {
   const id = defs.id('rc' + hex);
   if (!defs.has(id)) {
     const [r, g, b] = hexToRgb(hex).map((v) => v / 255);
-    // pale targets get a flatter, brighter dye (real champagne/blush petals have soft shading)
+    // pale targets (champagne, blush…) get a lighter dye: blend with the original so the
+    // real petal contrast and the flower's own centre colour survive instead of turning grey
     const lum = 0.3 * r + 0.59 * g + 0.11 * b;
-    const a = lum > 0.75 ? 0.88 : 1.0;
-    const off = 1.06 - a;
-    const row = (c) => `${(0.3 * c * a).toFixed(3)} ${(0.59 * c * a).toFixed(3)} ${(0.11 * c * a).toFixed(3)} 0 ${(c * off).toFixed(3)}`;
-    defs.add(id, `<filter id="${id}" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="${row(r)} ${row(g)} ${row(b)} 0 0 0 1 0"/></filter>`);
+    const s = lum > 0.75 ? 0.62 : 0.9;
+    const row = (c, i) => {
+      const k = [0.3, 0.59, 0.11].map((w, j) => s * w * c + (j === i ? 1 - s : 0));
+      return `${k.map((v) => v.toFixed(3)).join(' ')} 0 ${(s * c * (lum > 0.75 ? 0.06 : 0.14)).toFixed(3)}`;
+    };
+    defs.add(id, `<filter id="${id}" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="${row(r, 0)} ${row(g, 1)} ${row(b, 2)} 0 0 0 1 0"/></filter>`);
   }
   return id;
 }

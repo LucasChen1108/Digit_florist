@@ -39,8 +39,7 @@ The photo cut-outs in `assets/flowers/` were made from images on [Wikimedia Comm
 | `lisianthus/rim-full-1.webp` | [洋桔梗-重瓣 Eustoma grandiflorum -香港青衣市鎮 Tsing Yi Town, Hong Kong- (9255189488).jpg](https://commons.wikimedia.org/wiki/File:%E6%B4%8B%E6%A1%94%E6%A2%97-%E9%87%8D%E7%93%A3_Eustoma_grandiflorum_-%E9%A6%99%E6%B8%AF%E9%9D%92%E8%A1%A3%E5%B8%82%E9%8E%AE_Tsing_Yi_Town,_Hong_Kong-_(9255189488).jpg) | 阿橋 HQ | CC BY-SA 2.0 |
 | `tulip/red-full-1.webp` | [Tulipa sprengeri FotoTakkk Hungary PNG.png](https://commons.wikimedia.org/wiki/File:Tulipa_sprengeri_FotoTakkk_Hungary_PNG.png) | Takkk | CC BY-SA 3.0 |
 | `tulip/orange-full-1.webp` | [Tulip opening on white background 1986.png](https://commons.wikimedia.org/wiki/File:Tulip_opening_on_white_background_1986.png) | Amada44 | CC BY-SA 3.0 |
-| `tulip/red-half-1.webp` | [Tulipa hybrid Wellcome B0009233.jpg](https://commons.wikimedia.org/wiki/File:Tulipa_hybrid_Wellcome_B0009233.jpg) | unknown | CC BY 4.0 |
-| `tulip/pink-half-1.webp` | [Pink tulip on black.jpg](https://commons.wikimedia.org/wiki/File:Pink_tulip_on_black.jpg) | th_norge | CC BY 4.0 |
+| `tulip/red-half-1.webp` | [Tulipa hybrid Wellcome B0009233.jpg](https://commons.wikimedia.org/wiki/File:Tulipa_hybrid_Wellcome_B0009233.jpg) | Unknown | CC BY 4.0 |
 | `tulip/yellow-half-1.webp` | [Yellow tulip (Unsplash).jpg](https://commons.wikimedia.org/wiki/File:Yellow_tulip_(Unsplash).jpg) | Evgen  Bril' ar3b | CC0 |
 | `anemone/red-full-1.webp` | [Anemone-Coronaria-MK-ZE-Calanit001.jpg](https://commons.wikimedia.org/wiki/File:Anemone-Coronaria-MK-ZE-Calanit001.jpg) | MathKnight   and Zachi Evenor | CC BY-SA 4.0 |
 | `anemone/red-full-2.webp` | [Anemone-Coronaria-MK-ZE-Calanit002.png](https://commons.wikimedia.org/wiki/File:Anemone-Coronaria-MK-ZE-Calanit002.png) | MathKnight | CC BY-SA 4.0 |
@@ -71,3 +70,36 @@ The photo cut-outs in `assets/flowers/` were made from images on [Wikimedia Comm
 | `_foliage/leaf-11.webp` | [2020 year. Herbarium. Hydrangea arborescens. img-025.jpg](https://commons.wikimedia.org/wiki/File:2020_year._Herbarium._Hydrangea_arborescens._img-025.jpg) | Dmitry Makeev | CC BY-SA 4.0 |
 | `lavender/purple-full-1.webp` | [Lavandula angustifolia lavender Lavendel 01.jpg](https://commons.wikimedia.org/wiki/File:Lavandula_angustifolia_lavender_Lavendel_01.jpg) | Norbert Nagel, Mörfelden-Walldorf, Germany | CC BY-SA 3.0 |
 | `lavender/white-full-1.webp` | [Lavandula angustifolia - lavender - Lavendel - 01.jpg](https://commons.wikimedia.org/wiki/File:Lavandula_angustifolia_-_lavender_-_Lavendel_-_01.jpg) | Norbert Nagel | CC BY-SA 3.0 |
+| `rose/champagne-full-1.webp` | [Rosa 'Champagne Moment' - Regent's Park, London - DSC00480.jpg](https://commons.wikimedia.org/wiki/File:Rosa_%27Champagne_Moment%27_-_Regent%27s_Park,_London_-_DSC00480.jpg) | Daderot | CC0 |
+| `rose/champagne-full-2.webp` | [Rosa 'Comtes de Champagne' 01.jpg](https://commons.wikimedia.org/wiki/File:Rosa_%27Comtes_de_Champagne%27_01.jpg) | Geolina163 | CC BY-SA 4.0 |
+| `rose/champagne-full-3.webp` | [Wisley, RHS Garden, Bowes-Lyon Rose Garden, Rosa Champagne Celebration ' Frylimbo' - geograph.org.uk - 5801480.jpg](https://commons.wikimedia.org/wiki/File:Wisley,_RHS_Garden,_Bowes-Lyon_Rose_Garden,_Rosa_Champagne_Celebration_%27_Frylimbo%27_-_geograph.org.uk_-_5801480.jpg) | Michael Garlick | CC BY-SA 2.0 |
+| `rose/blush-full-1.webp` | [Fragile white rose (Unsplash).jpg](https://commons.wikimedia.org/wiki/File:Fragile_white_rose_(Unsplash).jpg) | Meredith Whitman whitmanm18 | CC0 |
+| `rose/blush-full-2.webp` | [Garden of Roses (Kordes 2007).JPG](https://commons.wikimedia.org/wiki/File:Garden_of_Roses_(Kordes_2007).JPG) | Huhu.  The original uploader was Huhu at German Wikipedia. | Public domain |
+| `rose/blush-full-3.webp` | [Rosa Garden of Roses 2022-07-04 3120.jpg](https://commons.wikimedia.org/wiki/File:Rosa_Garden_of_Roses_2022-07-04_3120.jpg) | Salicyna | CC BY-SA 4.0 |
+| `rose/white-half-1.webp` | [Vita rosor (9475240740).jpg](https://commons.wikimedia.org/wiki/File:Vita_rosor_(9475240740).jpg) | Fredrik Alpstedt | CC BY-SA 2.0 |
+| `rose/lilac-full-1.webp` | [Blue Rose APPLAUSE.jpg](https://commons.wikimedia.org/wiki/File:Blue_Rose_APPLAUSE.jpg) | Blue Rose Man | CC0 |
+| `rose/pink-full-4.webp` | [Arctic Blue floribunda rose (WEKblufytirar) - DSC06447.jpg](https://commons.wikimedia.org/wiki/File:Arctic_Blue_floribunda_rose_(WEKblufytirar)_-_DSC06447.jpg) | Daderot | CC0 |
+| `rose/lilac-full-3.webp` | [Lilac Rose (50086372878).jpg](https://commons.wikimedia.org/wiki/File:Lilac_Rose_(50086372878).jpg) | Cindy Gustafson | Public domain |
+| `rose/lilac-full-4.webp` | [Rose, Blue Bijou.jpg](https://commons.wikimedia.org/wiki/File:Rose,_Blue_Bijou.jpg) | Yoko Nekonomania | CC BY 2.0 |
+| `rose/blue-full-2.webp` | [Blue Rose Flower Blooms (Rosaceae).jpg](https://commons.wikimedia.org/wiki/File:Blue_Rose_Flower_Blooms_(Rosaceae).jpg) | GLady | CC0 |
+| `peony/coral-full-2.webp` | [Paeonia 'Coral Sunset' 5 2021 xPeony- (51206688267).jpg](https://commons.wikimedia.org/wiki/File:Paeonia_%27Coral_Sunset%27_5_2021_xPeony-_(51206688267).jpg) | F. D. Richards from Clinton, MI | CC BY-SA 2.0 |
+| `peony/blush-full-1.webp` | [Paeonia lactiflora Pink Hawaiian Coral.jpg](https://commons.wikimedia.org/wiki/File:Paeonia_lactiflora_Pink_Hawaiian_Coral.jpg) | User:Charvex | Public domain |
+| `peony/blush-full-2.webp` | [Paeonia lactiflora 'Kelway's Pink Delight'.jpg](https://commons.wikimedia.org/wiki/File:Paeonia_lactiflora_%27Kelway%27s_Pink_Delight%27.jpg) | Uleli | CC BY-SA 3.0 |
+| `lily/neutral-full-1.webp` | [Madonna Lilly.jpg](https://commons.wikimedia.org/wiki/File:Madonna_Lilly.jpg) | Arielinson | CC BY-SA 4.0 |
+| `lily/neutral-full-3.webp` | [N2 Lily.jpg](https://commons.wikimedia.org/wiki/File:N2_Lily.jpg) | Mike James from Reston, VA, USA | CC BY 2.0 |
+| `hydrangea/pink-full-1.webp` | [Hydrangea macrophylla-ALC-3-yercaud-salem-India.JPG](https://commons.wikimedia.org/wiki/File:Hydrangea_macrophylla-ALC-3-yercaud-salem-India.JPG) | Yercaud-elango | CC BY-SA 4.0 |
+| `hydrangea/pink-full-2.webp` | [Hydrangea macrophylla-ALC-4-yercaud-salem-India.JPG](https://commons.wikimedia.org/wiki/File:Hydrangea_macrophylla-ALC-4-yercaud-salem-India.JPG) | Yercaud-elango | CC BY-SA 4.0 |
+| `hydrangea/neutral-full-2.webp` | [White Hydrangea macrophylla.jpg](https://commons.wikimedia.org/wiki/File:White_Hydrangea_macrophylla.jpg) | KKPCW（Kyu3） | CC BY-SA 4.0 |
+| `hydrangea/neutral-full-3.webp` | [Hydrangea macrophylla-ALC-5-yercaud-salem-India.JPG](https://commons.wikimedia.org/wiki/File:Hydrangea_macrophylla-ALC-5-yercaud-salem-India.JPG) | Yercaud-elango | CC BY-SA 4.0 |
+| `hydrangea/green-full-1.webp` | [Flowers Nepal 9997.JPG](https://commons.wikimedia.org/wiki/File:Flowers_Nepal_9997.JPG) | Bijaya2043 | CC BY-SA 3.0 |
+| `hydrangea/green-full-2.webp` | [Arkesden pale green Hydrangea, Essex, England.jpg](https://commons.wikimedia.org/wiki/File:Arkesden_pale_green_Hydrangea,_Essex,_England.jpg) | Acabashi | CC BY-SA 4.0 |
+| `hydrangea/blue-full-2.webp` | [Hydrangea macrophylla-ALC-1-yercaud-salem-India.JPG](https://commons.wikimedia.org/wiki/File:Hydrangea_macrophylla-ALC-1-yercaud-salem-India.JPG) | Yercaud-elango | CC BY-SA 4.0 |
+| `hydrangea/blue-full-3.webp` | [Hydrangea macrophylla Ayesha-3-anna park-yercaud-salem-India.jpg](https://commons.wikimedia.org/wiki/File:Hydrangea_macrophylla_Ayesha-3-anna_park-yercaud-salem-India.jpg) | Yercaud-elango | CC BY 4.0 |
+| `tulip/neutral-full-1.webp` | [White Tulip (256167597).jpeg](https://commons.wikimedia.org/wiki/File:White_Tulip_(256167597).jpeg) | Igal Marcelo Zimmt | CC BY 3.0 |
+| `tulip/neutral-full-2.webp` | [White Tulip in Ustroń, Poland, April 2019.jpg](https://commons.wikimedia.org/wiki/File:White_Tulip_in_Ustro%C5%84,_Poland,_April_2019.jpg) | MichalPL | CC BY-SA 4.0 |
+| `tulip/purple-full-1.webp` | [Purple tulip (1).jpg](https://commons.wikimedia.org/wiki/File:Purple_tulip_(1).jpg) | Rosendahl | Public domain |
+| `tulip/purple-full-2.webp` | [Beautiful pink tulip flower photo with waterdrops.jpg](https://commons.wikimedia.org/wiki/File:Beautiful_pink_tulip_flower_photo_with_waterdrops.jpg) | Freefotopia | CC BY-SA 3.0 |
+| `anemone/pink-full-1.webp` | [Anemone coronaria (pink).JPG](https://commons.wikimedia.org/wiki/File:Anemone_coronaria_(pink).JPG) | Zeynel Cebeci | CC BY-SA 3.0 |
+| `ranunculus/blush-full-1.webp` | [Flower, Persian buttercup "M-Sakura" - Flickr - nekonomania.jpg](https://commons.wikimedia.org/wiki/File:Flower,_Persian_buttercup_%22M-Sakura%22_-_Flickr_-_nekonomania.jpg) | Yoko Nekonomania | CC BY 2.0 |
+| `ranunculus/neutral-full-2.webp` | [Flower, Persian buttercup "M-White" - Flickr - nekonomania.jpg](https://commons.wikimedia.org/wiki/File:Flower,_Persian_buttercup_%22M-White%22_-_Flickr_-_nekonomania.jpg) | Yoko Nekonomania | CC BY 2.0 |
+| `ranunculus/neutral-full-3.webp` | [White Ranunculus - Flickr - Swami Stream.jpg](https://commons.wikimedia.org/wiki/File:White_Ranunculus_-_Flickr_-_Swami_Stream.jpg) | Swaminathan from Gurgaon, India | CC BY 2.0 |
